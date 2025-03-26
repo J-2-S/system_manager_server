@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bcrypt = "0.17.0"
-bincode = "2.0.1"
-serde = "1.0.219"
+pam = "0.8.0"
 tokio = { version = "1.44.1", features = ["full"] }
+users = "0.11.0"
