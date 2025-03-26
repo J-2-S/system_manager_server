@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::io::{self, Write};
 use std::process::{Command, Stdio};
 // ONLY TEST ON DEBIAN WE NEED TO TEST OTHER DISTROS
 // Detects the package manager
