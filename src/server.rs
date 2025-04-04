@@ -1,12 +1,12 @@
 mod request_handler;
 mod secure;
-mod login_handshake;
+use request_handler::first_handshake;
 use tokio::{io::{AsyncReadExt, Error as IoError}, net::{TcpListener, TcpStream}, task};
 use std::{fmt, path::Path, sync::Arc};
 use tokio_rustls::TlsAcceptor;
 
 use secure::{load_ssl_config, CertError};
-use request_handler::socket_handle;
+
 pub enum ServerError{
     CertError(CertError),
     IoError(IoError)
@@ -48,16 +48,9 @@ pub async fn start(key_path:&Path,cert_path:&Path,addrs:&str) -> Result<(), Serv
                 let tls_stream = acceptor.accept(socket).await;
                 
                 match tls_stream {
-                    Ok(mut ssl_socket) => {
+                    Ok(ssl_socket) => {
                         // Step 5: Spawn a new task to handle each connection asynchronously
-                        task::spawn(async move {
-                            let data = socket_handle(&mut ssl_socket).await;
-
-                            // Optional: Handle the received data here (e.g., logging or processing)
-                            if !data.is_empty() {
-                                println!("Received data: {:?}", data);
-                            }
-                        });
+                            task::spawn(first_handshake(ssl_socket));
                     }
                     Err(e) => {
                         eprintln!("Failed to establish SSL connection: {}", e);
