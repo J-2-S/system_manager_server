@@ -50,7 +50,7 @@ pub async fn start(key_path:&Path,cert_path:&Path,addrs:&str) -> Result<(), Serv
                 match tls_stream {
                     Ok(ssl_socket) => {
                         // Step 5: Spawn a new task to handle each connection asynchronously
-                            task::spawn(first_handshake(ssl_socket));
+                        first_handshake(ssl_socket).await;
                     }
                     Err(e) => {
                         eprintln!("Failed to establish SSL connection: {}", e);
