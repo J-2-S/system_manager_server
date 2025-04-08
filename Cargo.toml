@@ -1,3 +1,4 @@
+
 [package]
 name = "system_manager_server"
 version = "0.1.0"
@@ -17,3 +18,12 @@ sysinfo = "0.34.2"
 tokio = { version = "1.44.2", features = ["full"] }
 tokio-rustls = "0.26.2"
 users = "0.11.0"
+
+[lib]
+name = "system_manager_server"
+crate-type = ["cdylib"]
+
+[[bin]]
+name = "system_manager_server_bin"
+path = "src/main.rs"
+
