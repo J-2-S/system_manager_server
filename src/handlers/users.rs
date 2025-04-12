@@ -12,7 +12,7 @@ use std::{
 use crate::auth::{self, is_sudo, USER_LOCK};
 
 #[derive(Debug)]
-enum ManagementError {
+pub enum ManagementError {
     PermissionDenied,
     IOError(tokio::io::Error),
     ExitError(ExitStatus),
