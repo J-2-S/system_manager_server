@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use pam::{self, PamError,PamReturnCode, PasswordConv};
 use tokio::sync::Mutex;
 use std::{error::Error, fmt, os::unix::process::CommandExt, process::{Command, Stdio}};
-use users::{User,self};
+use users::{self, Group, User};
 pub static USER_LOCK:Lazy<Mutex<()>> = Lazy::new(||Mutex::new(()));
 #[derive(Debug)]
 pub enum AuthenticateError {
@@ -59,3 +59,4 @@ pub fn is_sudo(user:User)->bool{
     }
 
 }
+
