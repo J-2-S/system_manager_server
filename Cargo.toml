@@ -1,12 +1,21 @@
-
 [package]
 name = "system_manager_server"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "system_manager_server"
+path = "src/lib.rs"
+# crate-type = ["cdylib"]
+
+[[bin]]
+name = "system_manager_server"
+path = "src/main.rs"
+
 [dependencies]
 battery = "0.7.8"
 libc = "0.2.171"
+libloading = "0.8.6"
 nix = "0.29.0"
 once_cell = "1.21.3"
 pam = "0.8.0"
@@ -18,5 +27,3 @@ sysinfo = "0.34.2"
 tokio = { version = "1.44.2", features = ["full"] }
 tokio-rustls = "0.26.2"
 users = "0.11.0"
-
-

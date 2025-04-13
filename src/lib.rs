@@ -1,6 +1,10 @@
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
-
+mod server;
+mod settings;
+mod handlers;
+mod auth;
+mod update_manager;
 use libc::{c_char, uid_t};
 use tokio::{sync::Mutex,task};
 
@@ -113,4 +117,8 @@ pub extern "C" fn init_command(
         locked.push(command);
     });
 }
+#[unsafe(no_mangle)]
+pub extern "C" fn test_api(){
+    println!("this is a test to see if I can call exe functions in a dll");
 
+}
