@@ -153,7 +153,7 @@ pub async fn load_plugins() {
                                                                  //but we might actual need to
                                                                  //error check it
                         let _name = name.clone();
-                        match task::spawn_blocking(move ||Plugin::new(&_name)).awsait {
+                        match task::spawn_blocking(move ||Plugin::new(&_name)).await {
                             Ok(Ok(plugin)) => locked_plugins.push(plugin),
                             Ok(Err(e)) => eprintln!("Failed to load plugin '{}': {}",name,e),
                             Err(e) => eprintln!("Failed to load plugin '{}': {}", name, e),
