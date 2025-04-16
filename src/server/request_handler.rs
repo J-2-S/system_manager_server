@@ -4,13 +4,12 @@ use serde::{Serialize,Deserialize};
 use serde_json;
 use users::User;
 use tokio::{io::{self, AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}, task};
-
+use system_manager_server::auth::auth_user;
 #[derive(Serialize,Deserialize,Debug)]
 struct Payload{
     key:String,
     content:String,
 }
-use crate::auth::auth_user;
 // Handles incoming socket data: reads the message size and message content
 /// This is all the options we will us
 fn auth(auth_string:&str)->Option<User>{

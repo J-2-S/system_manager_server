@@ -1,10 +1,9 @@
 use std::{io::Read, process::Stdio, sync::Arc};
 use libc::{getegid, geteuid, getgroups, gid_t, seteuid, setgroups};
-use rustls::lock::Mutex;
 use tokio::{io::{AsyncReadExt, AsyncWriteExt,BufReader,BufWriter}, process::Command, sync::mpsc, task};
 use users::{os::unix::UserExt, User};
 use std::ptr;
-use crate::auth::USER_LOCK;
+use system_manager_server::auth::USER_LOCK;
 async fn start_shell<S>(user: User, mut socket: S) -> Option<S>
 where
     S: AsyncReadExt + AsyncWriteExt + Unpin + Send + 'static,

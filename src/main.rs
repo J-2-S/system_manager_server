@@ -1,15 +1,8 @@
-use std::{os::unix::process::CommandExt, process::{Command, Stdio}};
-
-use libc::{setgid, setuid};
-use system_manager_server::test_api;
-use users::os::unix::UserExt;
-const PLUGIN_FOLDER:&str = "./plugins";
+mod update_manager;
+mod server;
+mod settings;
+mod handlers;
 #[tokio::main]
 async fn main() {
-    unsafe{
-        let lib = libloading::Library::new(format!("{}/libtemp.so",PLUGIN_FOLDER)).unwrap();
-        let function = lib.get::<unsafe extern "C" fn()>(b"plugin_start").unwrap();
-        (function)();
-    }
-
+    system_manager_server::load_plugins().await;
 }

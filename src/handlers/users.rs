@@ -9,7 +9,7 @@ use std::{
     fmt,
     process::{ExitStatus, Stdio},
 };
-use crate::auth::{self, is_sudo, USER_LOCK};
+use system_manager_server::auth::{self, is_sudo, USER_LOCK};
 
 #[derive(Debug)]
 pub enum ManagementError {
