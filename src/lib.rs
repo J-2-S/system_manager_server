@@ -1,3 +1,6 @@
+
+
+
 use std::collections::HashMap;
 use std::ffi::{c_void, CStr, CString};
 use std::sync::{Arc, OnceLock};
@@ -8,13 +11,20 @@ use tokio::{sync::Mutex, task};
 
 pub mod auth;
 
-// C-callback type
+/// C Types
 pub type Callback = unsafe extern "C" fn(uid_t, *const c_char, usize) -> *const c_char;
 
-const PLUGIN_PATH: &str = "/home/linuxman/code/system_manager_server/plugins/";
+/// Paths used for the program
+pub const PLUGIN_DIR: &str = "/home/linuxman/code/system_manager_server/plugins/"; //this is temp                                                                                   //for debugging
+pub const CONFIG_DIR: &str = "/etc/system_manager_server/";
+pub const DATA_DIR: &str = "/var/lib/system_manager_server/";
+pub const CACHE_DIR: &str = "/var/cache/system_manager_server/";
+pub const LOG_DIR: &str = "/var/log/system_manager_server/";
+//pub const PLUGIN_DIR = "/usr/lib/system_manager_server/";
 
+/// The vector used to store all the plugins and keep them in scope
 static PLUGINS: OnceLock<Mutex<Vec<Arc<Plugin>>>> = OnceLock::new();
-
+/// The command type
 struct APICommand {
     function: Callback,
     needs_root: bool,
@@ -29,7 +39,7 @@ pub struct Plugin {
 
 impl Plugin {
     pub fn new(name: &str) -> Result<Arc<Self>, Error> {
-        let lib = unsafe { Library::new(format!("{}{}", PLUGIN_PATH, name)) }?;
+        let lib = unsafe { Library::new(format!("{}{}", PLUGIN_DIR, name)) }?;
         let plugin = Arc::new(Self {
             name: Arc::new(name.to_string()),
             commands: Arc::new(Mutex::new(HashMap::new())),
@@ -96,7 +106,7 @@ impl Plugin {
 /// # Safety
 /// This function is unsafe because it dereferences raw pointers.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn init_command(
+pub unsafe extern "C" fn create_command(
     plugin: *const Plugin,
     name: *const c_char,
     function: Callback,
@@ -132,7 +142,7 @@ pub unsafe extern "C" fn init_command(
 }
 
 pub async fn load_plugins() {
-    let plugin_dir = match std::fs::read_dir(PLUGIN_PATH) {
+    let plugin_dir = match std::fs::read_dir(PLUGIN_DIR) {
         Ok(val) => val,
         Err(err) => {
             eprintln!("Could not read plugin directory: {}", err);
