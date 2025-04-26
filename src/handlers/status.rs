@@ -1,4 +1,4 @@
-use crate::update_manager::check_updates;
+use crate::{settings::Settings, update_manager::check_updates};
 use crate::settings::load_settings;
 use sysinfo::Disks;
 use battery::Manager;
@@ -40,16 +40,16 @@ fn check_power() -> Result<f32, String> {
  * Returns the current server status as a JSON string based on the `ServerStatus` struct.
  */
 pub fn get_status() -> Result<String,String> {
-    let settings = load_settings().map_err(|e|format!("{}",e))?;
+    let settings = Settings::default();
     let storage_threshold = settings.thresholds.low_storage;
     let power_threshold = settings.thresholds.low_power;
 
     // Check for low storage
-    let free_storage = check_storage() > storage_threshold;
+    let free_storage = check_storage() < storage_threshold;
 
     // Check for low power
-    let power_low = check_power().map_err(|e|format!("{}",e))? > power_threshold;
-
+    let power_low = check_power().map_err(|e|format!("{}",e))? < power_threshold;
+    println!("{}",power_low);
     // Check for updates
     // This assumes that the check_updates function returns a vector and a tuple of empty strings to indicate no updates.
     let updates = check_updates() == vec![( "".to_string(), "".to_string() )];

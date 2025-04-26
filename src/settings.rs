@@ -35,13 +35,15 @@ pub struct Thresholds {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Paths {
-    pub module_path: String,
+    pub cert_path:String,
+    pub key_path:String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
     pub thresholds: Thresholds,
     pub paths : Paths,
+    pub ignore_update:bool
 }
 
 pub fn save_settings(settings: &Settings) -> Result<(), SettingError> {
@@ -58,21 +60,28 @@ pub fn load_settings() -> Result<Settings, SettingError> {
     let settings = serde_json::from_str(&contents)?;
     Ok(settings)
 }
-
+impl Default for Settings {
+    fn default() -> Self {
+        Self{
+                thresholds: Thresholds {
+                    low_storage: 1000,
+                    low_power: 0.5,
+                },
+                paths : Paths {
+                    cert_path:String::from("/"), // This is a temp thing will will actual set a
+                                                // default path later
+                    key_path:String::from("/")
+                },
+                ignore_update:false
+            }
+    }
+}
 pub fn get_or_create_settings() -> Result<Settings, SettingError> {
     match load_settings() {
         Ok(settings) => Ok(settings),
         Err(_) => {
             // If settings file is missing or invalid, create default settings.
-            let default_settings = Settings {
-                thresholds: Thresholds {
-                    low_storage: 1_000,
-                    low_power: 2.0,
-                },
-                paths : Paths {
-                    module_path: String::from("./plugins"),
-                },
-            };
+            let default_settings = Settings::default();
             save_settings(&default_settings)?;
             Ok(default_settings)
         }

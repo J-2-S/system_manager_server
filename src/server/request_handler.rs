@@ -43,11 +43,14 @@ where S: AsyncRead + AsyncWrite + Unpin + Send + 'static
             }
         }
         "/status" => {
-            if let Ok(Ok(status)) = task::spawn_blocking(get_status).await {
-
+            let result = task::spawn_blocking(get_status).await;
+            if let Ok(Ok(status)) = result {
                 let _ = ws.send(Message::Text(status.into())).await;
-            } else {
-                let _ = ws.send(Message::Text("ERROR: invalid status".into())).await;
+            } else if let Ok(Err(error)) = result {
+                let _ = ws.send(Message::Text(format!("ERROR: invalid status {}",error).into())).await;
+            }else{
+                let error = result.err().unwrap();
+                println!("{}",error);
             }
         }
         path if path.starts_with("/plugin/") => {
