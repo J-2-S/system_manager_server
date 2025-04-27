@@ -1,0 +1,11 @@
+{
+  "thresholds": {
+    "low_storage": 80,
+    "low_power": 25
+  },
+  "paths": {
+    "cert_path": "/",
+    "key_path": "/"
+  },
+  "ignore_update": false
+}

@@ -1,6 +1,6 @@
 use crate::handlers::shell::start_shell;
 use crate::handlers::status::get_status;
-use crate::settings::{self, load_settings, save_settings, Settings};
+use crate::settings::{self, get_or_create_settings, load_settings, save_settings, Settings};
 use system_manager_server::auth::{auth_user, is_sudo};
 
 use futures_util::{SinkExt, StreamExt};
@@ -55,19 +55,19 @@ where S: AsyncRead + AsyncWrite + Unpin + Send + 'static
             }
         }
         "/settings/pull" =>{
+                let current_settings = match task::spawn_blocking(get_or_create_settings).await{
+                Ok(Ok(value))=> value,
+                Ok(Err(error))=> {
+                    let _ = ws.send(Message::Text(format!("ERROR: failed to load settings {}",error).into())).await;
+                    return;
 
-            //    Ok(Err(error))=> {
-            //        let _ = ws.send(Message::Text(format!("ERROR: failed to load settings {}",error).into())).await;
-            //        return;
-            //
-            //    },
-            //    Err(error) =>{
-            //        eprintln!("{}",error);
-            //        return;
-            //
-            //    }
-            //};
-            let current_settings = Settings::default(); // This is for debuging
+                },
+                Err(error) =>{
+                    eprintln!("{}",error);
+                    return;
+
+                }
+            };
             let _ = ws.send(serde_json::to_string(&current_settings).unwrap().into()).await; // This
                                                                                         // should
                                                                                         // not
@@ -91,7 +91,9 @@ where S: AsyncRead + AsyncWrite + Unpin + Send + 'static
 
                     };
                     match task::spawn_blocking(move || save_settings(&settings)).await{
-                        Ok(Ok(_))=> todo!(),
+                        Ok(Ok(_))=> {
+                            let _ = ws.send("SAVED".into()).await;
+                        },
                         Ok(Err(error)) => {
                             let _ = ws.send(format!("ERROR: failed to save settings due to error {}",error).into()).await;
                         }
