@@ -15,12 +15,12 @@ pub mod auth;
 pub type Callback = unsafe extern "C" fn(uid_t, *const c_char, usize) -> *const c_char;
 
 /// Paths used for the program
-pub const PLUGIN_DIR: &str = "/home/linuxman/code/system_manager_server/plugins/"; //this is temp                                                                                   //for debugging
+//pub const PLUGIN_DIR: &str = "/home/linuxman/code/system_manager_server/plugins/"; //this is temp                                                                                   //for debugging
 pub const CONFIG_DIR: &str = "/etc/system_manager_server/";
 pub const DATA_DIR: &str = "/var/lib/system_manager_server/";
 pub const CACHE_DIR: &str = "/var/cache/system_manager_server/";
 pub const LOG_DIR: &str = "/var/log/system_manager_server/";
-//pub const PLUGIN_DIR = "/usr/lib/system_manager_server/";
+pub const PLUGIN_DIR:&str = "/usr/lib/system_manager_server/";
 
 /// The vector used to store all the plugins and keep them in scope
 static PLUGINS: OnceLock<Mutex<Vec<Arc<Plugin>>>> = OnceLock::new();

@@ -27,19 +27,19 @@ impl From<serde_json::Error> for SettingError {
         Self::JsonError(value)
     }
 }
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug,PartialEq)]
 pub struct Thresholds {
-    pub low_storage: u64,
-    pub low_power: f32,
+    pub low_storage: u8,
+    pub low_power: u8,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug,PartialEq)]
 pub struct Paths {
     pub cert_path:String,
     pub key_path:String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug,PartialEq)]
 pub struct Settings {
     pub thresholds: Thresholds,
     pub paths : Paths,
@@ -64,8 +64,8 @@ impl Default for Settings {
     fn default() -> Self {
         Self{
                 thresholds: Thresholds {
-                    low_storage: 1000,
-                    low_power: 0.5,
+                    low_storage: 80,
+                    low_power: 25,
                 },
                 paths : Paths {
                     cert_path:String::from("/"), // This is a temp thing will will actual set a
@@ -76,6 +76,7 @@ impl Default for Settings {
             }
     }
 }
+
 pub fn get_or_create_settings() -> Result<Settings, SettingError> {
     match load_settings() {
         Ok(settings) => Ok(settings),

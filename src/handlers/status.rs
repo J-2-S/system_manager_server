@@ -11,28 +11,29 @@ struct ServerStatus {
     low_power: bool,
 }
 
-/** 
- * Returns the amount of free `bytes` remaining on the system.
+/**
+ * returns the amount of free space in percent
  */
-fn check_storage() -> u64 {
+fn check_storage()->u8{
     let disks = Disks::new_with_refreshed_list();
-    disks.iter().map(|disk| disk.available_space()).sum()
+    let available_space:u64 =  disks.iter().map(|disk| disk.available_space()).sum();
+    let total_space:u64 = disks.iter().map(|disk| disk.total_space()).sum();
+    100 - (available_space / total_space) as u8 // Should never give a value larger then 255 100% max
 }
 
-
 /** 
- * Returns the current battery percentage as a float between 0.0 and 1.0.
- * If no battery is found, it returns 1.0 ( assuming not low power to prevent warnings ).
+ * Returns the current battery percentage as a u8
+ * If no battery is found, it returns 100 ( assuming not low power to prevent warnings ).
  */
-fn check_power() -> Result<f32, String> {
+fn check_power() -> Result<u8, String> {
     let manager = Manager::new().map_err(|e| format!("{}",e))?;
     // Use the first available battery (if any); if there is none, assume not low power.
     if let Some(battery_result) = manager.batteries().map_err(|e| format!("{}",e))?.next() {
         let battery = battery_result.map_err(|e|format!("{}",e))?;
-        Ok(battery.state_of_charge().value)
+        Ok((battery.state_of_charge().value * 100.0).round() as u8)
     } else {
         // No battery found, assume not applicable.
-        Ok(1.0)
+        Ok(100)
     }
 }
 
@@ -40,7 +41,7 @@ fn check_power() -> Result<f32, String> {
  * Returns the current server status as a JSON string based on the `ServerStatus` struct.
  */
 pub fn get_status() -> Result<String,String> {
-    let settings = Settings::default();
+    let settings = Settings::default(); // This just for debuging 
     let storage_threshold = settings.thresholds.low_storage;
     let power_threshold = settings.thresholds.low_power;
 

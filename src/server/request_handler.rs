@@ -1,6 +1,7 @@
 use crate::handlers::shell::start_shell;
 use crate::handlers::status::get_status;
-use system_manager_server::auth::auth_user;
+use crate::settings::{self, load_settings, save_settings, Settings};
+use system_manager_server::auth::{auth_user, is_sudo};
 
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
@@ -50,8 +51,60 @@ where S: AsyncRead + AsyncWrite + Unpin + Send + 'static
                 let _ = ws.send(Message::Text(format!("ERROR: invalid status {}",error).into())).await;
             }else{
                 let error = result.err().unwrap();
-                println!("{}",error);
+                eprintln!("{}",error);
             }
+        }
+        "/settings/pull" =>{
+
+            //    Ok(Err(error))=> {
+            //        let _ = ws.send(Message::Text(format!("ERROR: failed to load settings {}",error).into())).await;
+            //        return;
+            //
+            //    },
+            //    Err(error) =>{
+            //        eprintln!("{}",error);
+            //        return;
+            //
+            //    }
+            //};
+            let current_settings = Settings::default(); // This is for debuging
+            let _ = ws.send(serde_json::to_string(&current_settings).unwrap().into()).await; // This
+                                                                                        // should
+                                                                                        // not
+                                                                                        // throw a
+                                                                                        // error
+        }
+        "/settings/push"=>{
+            if let Some(Ok(Message::Text(j_string))) = ws.next().await{ // This should be the case
+                if is_sudo(user){
+                    let settings:Settings = match task::spawn_blocking(move || serde_json::from_str(&j_string)).await{
+                        Ok(Ok(value)) => value,
+                        Ok(Err(error))=>{
+                            let _ = ws.send(format!("ERROR: failed to set new settings due to error {}",error).into()).await;
+                            return;
+                        }
+                        Err(error)=> {
+                            eprintln!("{}",error);
+                            return;
+
+                        }
+
+                    };
+                    match task::spawn_blocking(move || save_settings(&settings)).await{
+                        Ok(Ok(_))=> todo!(),
+                        Ok(Err(error)) => {
+                            let _ = ws.send(format!("ERROR: failed to save settings due to error {}",error).into()).await;
+                        }
+                        Err(error)=>{
+                            eprintln!("{}",error);
+                        }
+                    }
+                }else{
+                    let _ = ws.send("ERROR: You don't have permisson to change settings please contact your system admin".into()).await;
+                }
+
+            }
+
         }
         path if path.starts_with("/plugin/") => {
             todo!()
