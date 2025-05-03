@@ -24,6 +24,7 @@ pub const PLUGIN_DIR:&str = "/usr/lib/system_manager_server/";
 
 /// The vector used to store all the plugins and keep them in scope
 static PLUGINS: OnceLock<Mutex<Vec<Arc<Plugin>>>> = OnceLock::new();
+
 /// The command type
 struct APICommand {
     function: Callback,

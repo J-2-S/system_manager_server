@@ -1,5 +1,5 @@
 use crate::handlers::shell::start_shell;
-use crate::handlers::status::get_status;
+use crate::handlers::status::{check_power, check_storage, get_status};
 use crate::settings::{self, get_or_create_settings, load_settings, save_settings, Settings};
 use system_manager_server::auth::{auth_user, is_sudo};
 
@@ -107,6 +107,44 @@ where S: AsyncRead + AsyncWrite + Unpin + Send + 'static
 
             }
 
+        }
+        "/status/power"=>{
+            let current_power = match task::spawn_blocking(check_power).await{
+                Ok(Ok(value))=> value,
+                Err(error)=>{
+                    eprintln!("{}",error);
+                    return;
+                },
+                Ok(Err(error))=>{
+                    let _ = ws.send("ERROR: Failed to check power".into()).await;
+                    return;
+                }
+            };
+            let j_string = match task::spawn_blocking(move ||serde_json::to_string(&current_power)).await{
+                Ok(Ok(value))=>value,
+                _ =>{
+                    let _ = ws.send("ERROR: Failed to check power".into()).await;
+                        return;
+                }
+            };
+            let _ = ws.send(j_string.into()).await;
+        }
+        "/status/storage"=>{
+            let current_storage = match task::spawn_blocking(check_storage).await{
+                Ok(value)=> value,
+                Err(error)=>{
+                    eprintln!("{}",error);
+                    return;
+                },
+            };
+            let j_string = match task::spawn_blocking(move ||serde_json::to_string(&current_storage)).await{
+                Ok(Ok(value))=>value,
+                _ =>{
+                    let _ = ws.send("ERROR: Failed to check storage".into()).await;
+                        return;
+                }
+            };
+            let _ = ws.send(j_string.into()).await;
         }
         path if path.starts_with("/plugin/") => {
             todo!()

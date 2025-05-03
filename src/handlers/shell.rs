@@ -1,4 +1,4 @@
-use std::{process::Stdio, ptr};
+use std::{ffi::OsStr, process::Stdio, ptr};
 use libc::{getegid, geteuid, getgroups, gid_t, seteuid, setgroups};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
@@ -35,18 +35,33 @@ where
 
     unsafe { seteuid(user.uid()) };
 
-    let process = Command::new(user.shell())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn();
+    let shell = user.shell();
+    let shell_name = shell.file_name().unwrap_or(OsStr::new(""));
+    println!("{:?}",shell_name);
+    let mut command = if shell_name == "bash" {
+        println!("ran as bash");
+        let mut cmd = Command::new(shell);
+        cmd.arg("--login") // Force reading ~/.bash_profile, which usually sources ~/.bashrc
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        cmd
+    } else {
+        let mut cmd = Command::new(shell);
+        cmd.stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        cmd
+        };
+
+    let process = command.spawn();
+
 
     match process {
         Ok(mut child) => {
             let mut stdout = BufReader::new(child.stdout.take().unwrap());
             let mut stderr = BufReader::new(child.stderr.take().unwrap());
             let mut stdin = BufWriter::new(child.stdin.take().unwrap());
-
             let (io_out, mut socket_in) = mpsc::channel::<Vec<u8>>(8);
 
             // Task: Read shell output and forward to WebSocket
@@ -88,7 +103,10 @@ where
                                     }
                                     let _ = stdin.flush().await;
                                 }
-                                Some(Ok(Message::Close(_))) | None | Some(Err(_)) => break,
+                                Some(Ok(Message::Close(_))) | None | Some(Err(_)) => {
+                                    println!("Closed for some reason");
+                                    break
+                                },
                                 _ => {}
                             }
                         }

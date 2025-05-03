@@ -14,18 +14,18 @@ struct ServerStatus {
 /**
  * returns the amount of free space in percent
  */
-fn check_storage()->u8{
+pub fn check_storage()->u8{
     let disks = Disks::new_with_refreshed_list();
     let available_space:u64 =  disks.iter().map(|disk| disk.available_space()).sum();
     let total_space:u64 = disks.iter().map(|disk| disk.total_space()).sum();
-    100 - (available_space / total_space) as u8 // Should never give a value larger then 255 100% max
+    100 - (total_space / available_space) as u8 // Should never give a value larger then 255 100% max
 }
 
 /** 
  * Returns the current battery percentage as a u8
  * If no battery is found, it returns 100 ( assuming not low power to prevent warnings ).
  */
-fn check_power() -> Result<u8, String> {
+pub fn check_power() -> Result<u8, String> {
     let manager = Manager::new().map_err(|e| format!("{}",e))?;
     // Use the first available battery (if any); if there is none, assume not low power.
     if let Some(battery_result) = manager.batteries().map_err(|e| format!("{}",e))?.next() {
