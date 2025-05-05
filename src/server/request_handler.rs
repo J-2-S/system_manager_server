@@ -6,6 +6,7 @@ use system_manager_server::auth::{auth_user, is_sudo};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json;
+use system_manager_server::PLUGINS;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::task;
 
@@ -145,6 +146,26 @@ where S: AsyncRead + AsyncWrite + Unpin + Send + 'static
                 }
             };
             let _ = ws.send(j_string.into()).await;
+        }
+        "/plugins" =>{
+            let mut names:Vec<String> = vec![];
+            if let Some(plugins) = PLUGINS.get(){
+                for x in plugins.lock().await.iter(){
+                    names.push(x.name().to_string());
+                }
+            }else{
+                let _ = ws.send("ERROR: Failed to load plugins".into()).await;
+                return;
+            }
+            let j_string = match task::spawn_blocking(move || serde_json::to_string(&names)).await{
+                Ok(Ok(value))=> value,
+                _ =>{
+                    let _ = ws.send("ERROR: Failed to load plugins".into()).await;
+                    return;
+                }
+            };
+            let _ = ws.send(j_string.into()).await;
+            
         }
         path if path.starts_with("/plugin/") => {
             todo!()

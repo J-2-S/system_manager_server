@@ -7,5 +7,5 @@
     "cert_path": "/",
     "key_path": "/"
   },
-  "ignore_update": false
+  "ignore_update": true
 }
