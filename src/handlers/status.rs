@@ -1,5 +1,5 @@
 use crate::{settings::Settings, update_manager::check_updates};
-use crate::settings::load_settings;
+use crate::settings::{get_or_create_settings, load_settings};
 use sysinfo::Disks;
 use battery::Manager;
 use serde::{Serialize, Deserialize};
@@ -41,7 +41,7 @@ pub fn check_power() -> Result<u8, String> {
  * Returns the current server status as a JSON string based on the `ServerStatus` struct.
  */
 pub fn get_status() -> Result<String,String> {
-    let settings = Settings::default(); // This just for debuging 
+    let settings = get_or_create_settings().map_err(|error|error.to_string())?;
     let storage_threshold = settings.thresholds.low_storage;
     let power_threshold = settings.thresholds.low_power;
 
@@ -49,12 +49,13 @@ pub fn get_status() -> Result<String,String> {
     let free_storage = check_storage() < storage_threshold;
 
     // Check for low power
-    let power_low = check_power().map_err(|e|format!("{}",e))? < power_threshold;
-    println!("{}",power_low);
-    // Check for updates
+    let power_low = check_power().map_err(|e|e.to_string())? < power_threshold;
     // This assumes that the check_updates function returns a vector and a tuple of empty strings to indicate no updates.
-    let updates = check_updates() == vec![( "".to_string(), "".to_string() )];
-
+    let mut updates = true;
+    if !settings.ignore_update{
+        updates = check_updates() == vec![( "".to_string(), "".to_string() )];
+    }
+    
     let current_status = ServerStatus {
         online: true,
         up_to_date: updates,

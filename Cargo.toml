@@ -13,6 +13,7 @@ name = "system_manager_server"
 path = "src/main.rs"
 
 [dependencies]
+axum = "0.8.4"
 battery = "0.7.8"
 futures-util = "0.3.31"
 libc = "0.2.171"

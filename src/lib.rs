@@ -12,7 +12,7 @@ use tokio::{sync::Mutex, task};
 pub mod auth;
 
 /// C Types
-pub type Callback = unsafe extern "C" fn(uid_t, *const c_char, usize) -> *const c_char;
+pub type Callback = unsafe extern "C" fn(*const c_char, usize,*mut c_char);
 
 /// Paths used for the program
 //pub const PLUGIN_DIR: &str = "/home/linuxman/code/system_manager_server/plugins/"; //this is temp                                                                                   //for debugging
@@ -69,7 +69,7 @@ impl Plugin {
         name: &str,
         message: &str,
         user_id: uid_t,
-    ) -> Option<String> {
+    ) -> Option<()> {
         let commands = self.commands.lock().await;
         let command = commands.get(name)?;
 
@@ -86,17 +86,7 @@ impl Plugin {
                 (CString::new("").unwrap(), 0)
             };
 
-            let out_ptr = unsafe { function(user_id, c_message.as_ptr(), size) };
-            if out_ptr.is_null() {
-                return None;
-            }
-
-            let out_cstr = unsafe { CStr::from_ptr(out_ptr) };
-            let out = out_cstr.to_str().ok()?.to_string();
-
-            unsafe { libc::free(out_ptr as *mut c_void) };
-
-            Some(out)
+            Some(())
         })
         .await
         .ok()?

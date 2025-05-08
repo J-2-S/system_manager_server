@@ -3,6 +3,7 @@ use std::io::{self, Read, Write};
 use serde::{Serialize, Deserialize};
 use std::error::Error;
 const SETTINGS_FILE: &str = "./settings.json";
+
 #[derive(Debug)]
 pub enum SettingError {
     IOError(io::Error),
@@ -35,6 +36,8 @@ pub struct Thresholds {
 
 #[derive(Serialize, Deserialize, Debug,PartialEq)]
 pub struct Paths {
+
+
     pub cert_path:String,
     pub key_path:String,
 }
@@ -50,6 +53,8 @@ pub fn save_settings(settings: &Settings) -> Result<(), SettingError> {
     let encoded = serde_json::to_string_pretty(settings)?;
     let mut file = File::create(SETTINGS_FILE)?;
     file.write_all(encoded.as_bytes())?;
+
+
     Ok(())
 }
 
@@ -68,6 +73,8 @@ impl Default for Settings {
                     low_power: 25,
                 },
                 paths : Paths {
+
+
                     cert_path:String::from("/"), // This is a temp thing will will actual set a
                                                 // default path later
                     key_path:String::from("/")
