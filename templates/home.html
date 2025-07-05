@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="utf-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>System Manager</title>
+   <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+   <div class="h-screen bg-background gap-5">
+      <div class="flex flex-col items-center justify-center bg-card border-2 border-border">
+         <header class="text-text p-5 text-5xl flex justify-between items-center rounded-lg h">Home</header>
+      </div>
+      <div class="flex flex-cl items-center justify-center p-5">
+         <div
+            class="flex flex-col items-center justify-center bg-card h-full w-auto ph-5 shadow-md shadow-border border-2 border-border rounded-lg">
+            <h1 class="text-text text-2xl">Hello, {{username}}!</h1>
+         </div>
+      </div>
+      <div class="pt-10 flex flex-col items-center justify-center">
+         <div
+            class="flex flex-col items-center justify-center bg-card h-full w-auto ph-5 shadow-md shadow-border border-2 border-border rounded-lg">
+            <h1 class="text-text text-2xl">Status</h1>
+            <p class="text-text text-xl">Low Power: {{low_power}}</p>
+            <p class="text-text text-xl">Low Storage: {{low_storage}}</p>
+            <p class="text-text text-xl">Updates Available: {{updates_available}}</p>
+         </div>
+         <div class="pt-10 flex flex-col items-center justify-center w-full h-full">
+            <a href="/logout"
+               class="flex flex-col items-center justify-center bg-primary h-full w-auto shadow-md shadow-border border-2 border-border rounded-lg hover:bg-secondary">
+               <p class="text-xl text-text">Logout</p>
+            </a>
+         </div>
+      </div>
+</body>

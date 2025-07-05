@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+
+<head>
+   <link rel="stylesheet" href="/node_modules/@xterm/xterm/css/xterm.css" />
+   <link rel="stylesheet" href="/static/style.css" />
+   <script src="/node_modules/@xterm/xterm/lib/xterm.js"></script>
+   <script src="/node_modules/@xterm/addon-web-links/lib/addon-web-links.js"></script>
+   <script src="/node_modules/@xterm/addon-search/lib/addon-search.js"></script>
+   <script src="/node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+</head>
+
+<body>
+   <div class="h-screen w-screen">
+      <div class="h-screen w-screen" id="terminal"></div>
+   </div>
+   <script>
+      const term = new Terminal();
+      const fitAddon = new window.FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+      term.loadAddon(new window.WebLinksAddon.WebLinksAddon());
+      term.loadAddon(new window.SearchAddon.SearchAddon());
+      term.open(document.getElementById('terminal'));
+      fitAddon.fit();
+      const socket = new WebSocket('/ws/shell');
+      socket.onmessage = function (event) {
+         term.write(event.data);
+      };
+      socket.onclose = function (event) {
+         //window.location.replace('/');
+      };
+      socket.onerror = function (event) {
+         term.write('Error.\n');
+      };
+      term.onData(function (key) {
+         if (key === '\x7f') {
+            console.log('backspace');
+         } else {
+            console.log(key);
+         }
+      });
+   </script>
+</body>
+
+</html>

@@ -1,12 +1,16 @@
-use std::{net::SocketAddr, path::Path};
-
-mod update_manager;
+use std::path::Path;
+mod handlers;
 mod server;
 mod settings;
-mod handlers;
-use system_manager_server::load_plugins;
+mod templates;
+mod update_manager;
 #[tokio::main]
 async fn main() {
-    load_plugins().await;
-    server::start(Path::new("dev.key"), Path::new("dev.crt"),"10.0.0.131:6969").await.unwrap();
+    server::start(
+        Path::new("dev.key"),
+        Path::new("dev.crt"),
+        "10.0.0.131:6969",
+    )
+    .await
+    .unwrap();
 }

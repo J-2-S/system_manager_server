@@ -1,0 +1,57 @@
+@import "tailwindcss";
+@source "src/templates";
+@source "static";
+
+/* -------- LIGHT MODE -------- */
+:root {
+   --background: #FFFFFF;
+   --text: #000000;
+   --primary: #007BFF;
+   --secondary: #5A8DB3;
+   --border: #E0E0E0;
+   --card: #F8F9FA;
+   --error: #DC3545;
+   --warning: #FFC107;
+   --success: #28A745;
+}
+
+/* -------- DARK MODE -------- */
+@media (prefers-color-scheme: dark) {
+   :root {
+      --background: #121212;
+      --text: #FFFFFF;
+      --primary: #00406c;
+      --secondary: #002137;
+      --border: #272727;
+      --card: #1E1E1E;
+      --error: #FF6B6B;
+      --warning: #FFD966;
+      --success: #66FF66;
+   }
+}
+
+/* Tailwind theme inline (optional) */
+@theme inline {
+   --color-background: var(--background);
+   --color-foreground: var(--text);
+
+   --color-primary: var(--primary);
+   --color-secondary: var(--secondary);
+   --color-border: var(--border);
+   --color-card: var(--card);
+
+   --color-error: var(--error);
+   --color-warning: var(--warning);
+   --color-success: var(--success);
+
+   --font-sans: var(--font-geist-sans, system-ui, sans-serif);
+   --font-mono: var(--font-geist-mono, monospace);
+}
+
+/* Global body styles */
+body {
+   background-color: var(--background);
+   color: var(--text);
+   font-family: var(--font-sans);
+   color: var(--text);
+}
