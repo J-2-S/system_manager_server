@@ -7,9 +7,8 @@ use futures_util::{SinkExt, StreamExt};
 use libc::*;
 use std::{
     ffi::CString,
-    fs::File,
     io,
-    os::{fd::FromRawFd, unix::io::RawFd},
+    os::unix::io::RawFd,
     ptr,
     sync::Arc,
 };
@@ -19,7 +18,7 @@ use tokio::{
 };
 use users::{User, os::unix::UserExt};
 
-unsafe fn open_pty() -> io::Result<(RawFd, String)> {
+unsafe fn open_pty() -> io::Result<(RawFd, String)> { unsafe {
     let master_fd = posix_openpt(O_RDWR | O_NOCTTY);
     if master_fd < 0 {
         return Err(io::Error::last_os_error());
@@ -33,7 +32,7 @@ unsafe fn open_pty() -> io::Result<(RawFd, String)> {
     }
     let slave_name = std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned();
     Ok((master_fd, slave_name))
-}
+}}
 
 fn set_raw_mode(fd: RawFd) -> Result<(), HandleError> {
     unsafe {
@@ -125,7 +124,7 @@ pub fn start_shell(socket: WebSocket, user: User) -> Result<(), HandleError> {
     }
 
     let mut buf = vec![0u8; 1024];
-    let (mut sender, mut receiver) = socket.split();
+    let (sender, mut receiver) = socket.split();
     let (tx, mut rx) = mpsc::channel(100);
 
     task::spawn(async move {
