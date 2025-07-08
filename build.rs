@@ -17,6 +17,7 @@ fn main() {
 
     // Watch all files in templates/ recursively
     watch_dir_recursive(Path::new("templates"));
+    watch_dir_recursive(Path::new("static"));
 
     // Step 1: Build Tailwind CSS using the CLI
     let status = Command::new("npx")

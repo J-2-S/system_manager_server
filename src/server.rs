@@ -163,7 +163,12 @@ async fn shell_handler(ws: WebSocketUpgrade, session: Session) -> AxumResult<imp
         if let Ok(user) = auth::auth_user(&username, &password) {
             Ok(ws
                 .on_upgrade(|socket| async move {
-                    start_shell(socket, user).await;
+                    task::spawn_blocking(move || {
+                        let _ = start_shell(socket, user)
+                            .map_err(|e| eprintln!("Failed to start shell: {e}"));
+                    })
+                    .await
+                    .unwrap();
                 })
                 .into_response())
         } else {

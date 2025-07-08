@@ -206,7 +206,7 @@ dependencies = [
  "lazycell",
  "libc",
  "mach",
- "nix 0.19.1",
+ "nix",
  "num-traits",
  "uom",
  "winapi",
@@ -287,12 +287,6 @@ name = "cfg-if"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9555578bc9e57714c812a1f84e4fc5b4d21fcb063490c624de019f7464c91268"
-
-[[package]]
-name = "cfg_aliases"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "clang-sys"
@@ -803,18 +797,6 @@ dependencies = [
  "bitflags 1.3.2",
  "cc",
  "cfg-if",
- "libc",
-]
-
-[[package]]
-name = "nix"
-version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71e2746dc3a24dd78b3cfcb7be93368c6de9963d30f43a6a73998a9cf4b17b46"
-dependencies = [
- "bitflags 2.9.1",
- "cfg-if",
- "cfg_aliases",
  "libc",
 ]
 
@@ -1365,7 +1347,6 @@ dependencies = [
  "futures-util",
  "libc",
  "libloading",
- "nix 0.29.0",
  "once_cell",
  "pam",
  "rand 0.9.1",
@@ -1376,7 +1357,6 @@ dependencies = [
  "sysinfo",
  "tokio",
  "tokio-rustls",
- "tokio-stream",
  "tower",
  "tower-http",
  "tower-sessions",
@@ -1472,17 +1452,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e727b36a1a0e8b74c376ac2211e40c2c8af09fb4013c60d910495810f008e9b"
 dependencies = [
  "rustls",
- "tokio",
-]
-
-[[package]]
-name = "tokio-stream"
-version = "0.1.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eca58d7bba4a75707817a2c44174253f9236b2d5fbd055602e9d5c07c139a047"
-dependencies = [
- "futures-core",
- "pin-project-lite",
  "tokio",
 ]
 

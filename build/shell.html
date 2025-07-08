@@ -14,30 +14,60 @@
    <div class="h-screen w-screen">
       <div class="h-screen w-screen" id="terminal"></div>
    </div>
+
    <script>
-      const term = new Terminal();
+      const term = new Terminal({
+         cursorBlink: true,
+         fontSize: 14,
+         convertEol: true,
+      });
+
       const fitAddon = new window.FitAddon.FitAddon();
+      const webLinksAddon = new window.WebLinksAddon.WebLinksAddon();
+      const searchAddon = new window.SearchAddon.SearchAddon();
+
       term.loadAddon(fitAddon);
-      term.loadAddon(new window.WebLinksAddon.WebLinksAddon());
-      term.loadAddon(new window.SearchAddon.SearchAddon());
+      term.loadAddon(webLinksAddon);
+      term.loadAddon(searchAddon);
+
       term.open(document.getElementById('terminal'));
       fitAddon.fit();
-      const socket = new WebSocket('/ws/shell');
-      socket.onmessage = function (event) {
-         term.write(event.data);
-      };
-      socket.onclose = function (event) {
-         //window.location.replace('/');
-      };
-      socket.onerror = function (event) {
-         term.write('Error.\n');
-      };
-      term.onData(function (key) {
-         if (key === '\x7f') {
-            console.log('backspace');
+
+      const socket = new WebSocket('ws://' + location.host + '/ws/shell');
+      socket.binaryType = 'arraybuffer';
+
+      socket.onmessage = async function (event) {
+         let decoder = new TextDecoder();
+         let text = decoder.decode(event.data);
+         console.log(text);
+         let data;
+         if (event.data instanceof ArrayBuffer) {
+            data = new Uint8Array(event.data);
+         } else if (typeof event.data === 'string') {
+            data = new TextEncoder().encode(event.data);
          } else {
-            console.log(key);
+            data = new Uint8Array(await event.data.arrayBuffer());
          }
+         term.write(data);
+      };
+
+      socket.onclose = function () {
+         term.write('\r\n[Disconnected from server]\r\n');
+      };
+
+      socket.onerror = function () {
+         term.write('\r\n[WebSocket error]\r\n');
+      };
+
+      term.onData(function (data) {
+         if (socket.readyState === WebSocket.OPEN) {
+            socket.send(data);
+         }
+      });
+
+      // Optional: resize support
+      window.addEventListener('resize', () => {
+         fitAddon.fit();
       });
    </script>
 </body>

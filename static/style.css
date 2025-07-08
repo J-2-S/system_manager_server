@@ -186,6 +186,9 @@
   .w-screen {
     width: 100vw;
   }
+  .resize {
+    resize: both;
+  }
   .flex-col {
     flex-direction: column;
   }
