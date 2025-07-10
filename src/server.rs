@@ -7,7 +7,6 @@ use crate::templates::ManagementTemplate;
 use crate::templates::SettingsTemplate;
 use askama::Template;
 use axum::Form;
-use axum::http::Request;
 use axum::http::StatusCode;
 use axum::response::Result as AxumResult;
 use axum::response::{Html, Redirect};
@@ -15,7 +14,6 @@ use axum::routing::post;
 use axum::{Router, extract::WebSocketUpgrade, response::IntoResponse, routing::get};
 use secure::{CertError, load_ssl_config};
 use serde::Deserialize;
-use std::ffi::OsString;
 use std::{fmt, net::ToSocketAddrs, path::Path, sync::Arc};
 use system_manager_server::auth;
 use system_manager_server::auth::is_group_leader;
@@ -25,9 +23,6 @@ use tokio::task;
 use tokio_rustls::TlsAcceptor;
 use tower_http::services;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer};
-use users::Group;
-use users::all_users;
-use users::os::unix::GroupExt;
 
 #[derive(Debug, Deserialize)]
 pub struct LoginForm {
