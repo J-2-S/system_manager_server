@@ -5,34 +5,30 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use libc::*;
-use std::{
-    ffi::CString,
-    io,
-    os::unix::io::RawFd,
-    ptr,
-    sync::Arc,
-};
+use std::{ffi::CString, io, os::unix::io::RawFd, ptr, sync::Arc};
 use tokio::{
     sync::{Mutex, mpsc},
     task,
 };
 use users::{User, os::unix::UserExt};
 
-unsafe fn open_pty() -> io::Result<(RawFd, String)> { unsafe {
-    let master_fd = posix_openpt(O_RDWR | O_NOCTTY);
-    if master_fd < 0 {
-        return Err(io::Error::last_os_error());
+unsafe fn open_pty() -> io::Result<(RawFd, String)> {
+    unsafe {
+        let master_fd = posix_openpt(O_RDWR | O_NOCTTY);
+        if master_fd < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        if grantpt(master_fd) != 0 || unlockpt(master_fd) != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        let ptr = ptsname(master_fd);
+        if ptr.is_null() {
+            return Err(io::Error::last_os_error());
+        }
+        let slave_name = std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned();
+        Ok((master_fd, slave_name))
     }
-    if grantpt(master_fd) != 0 || unlockpt(master_fd) != 0 {
-        return Err(io::Error::last_os_error());
-    }
-    let ptr = ptsname(master_fd);
-    if ptr.is_null() {
-        return Err(io::Error::last_os_error());
-    }
-    let slave_name = std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned();
-    Ok((master_fd, slave_name))
-}}
+}
 
 fn set_raw_mode(fd: RawFd) -> Result<(), HandleError> {
     unsafe {
@@ -50,7 +46,7 @@ fn set_raw_mode(fd: RawFd) -> Result<(), HandleError> {
 
 fn active_shell(user: User, slave_path: &str) -> Result<pid_t, HandleError> {
     let uid = user.uid();
-
+    std::env::set_current_dir(user.home_dir()).unwrap(); // This is needed for the shell to find the correct PATH
     unsafe {
         let pid = fork();
         if pid < 0 {
@@ -61,13 +57,11 @@ fn active_shell(user: User, slave_path: &str) -> Result<pid_t, HandleError> {
             // === CHILD PROCESS ===
             if setsid() < 0 {
                 eprintln!("setsid failed");
-                std::process::exit(1);
             }
 
             let slave_fd = open(slave_path.as_ptr() as *const _, O_RDWR);
             if slave_fd < 0 {
                 eprintln!("Failed to open slave");
-                std::process::exit(1);
             }
 
             // 🔧 Set raw mode on slave
@@ -81,7 +75,6 @@ fn active_shell(user: User, slave_path: &str) -> Result<pid_t, HandleError> {
 
             if ioctl(slave_fd, TIOCSCTTY, 0) < 0 {
                 eprintln!("ioctl TIOCSCTTY failed");
-                std::process::exit(1);
             }
 
             dup2(slave_fd, 0);
@@ -90,7 +83,12 @@ fn active_shell(user: User, slave_path: &str) -> Result<pid_t, HandleError> {
 
             if setuid(uid) < 0 {
                 eprintln!("setuid failed");
-                std::process::exit(1);
+            }
+
+            for group in user.groups().unwrap_or_default() {
+                if setgid(group.gid()) < 0 {
+                    eprintln!("setgid failed");
+                }
             }
 
             let shell = CString::new(user.shell().to_string_lossy().as_bytes()).unwrap();

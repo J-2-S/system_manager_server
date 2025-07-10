@@ -2,43 +2,47 @@
 <html lang="en">
 
 <head>
-   <meta charset="UTF-8">
-   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta charset="UTF-8" />
+   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
    <title>Login</title>
-   <link rel="stylesheet" href="/static/style.css">
+   <link rel="stylesheet" href="/static/style.css" />
 </head>
 
-<body>
-   <div class="h-screen bg-background gap-5">
-      <div class="flex flex-col items-center justify-center bg-card border-2 border-border">
-         <header class="text-text p-5 text-5xl flex justify-between items-center rounded-lg h">Login</header>
+<body class="bg-background text-text min-h-screen flex flex-col justify-center items-center px-4">
+
+   <!-- Page Header -->
+   <header
+      class="text-3xl w-full text-center font-semibold mb-8 bg-card border border-border px-8 py-4 rounded shadow-md">
+      Login
+   </header>
+
+   <!-- Login Form -->
+   <form action="/login" method="post"
+      class="bg-card border border-border rounded-lg shadow-md p-6 w-full max-w-md space-y-6">
+
+      <!-- Username -->
+      <div class="flex flex-col">
+         <label for="username" class="text-lg mb-1">Username</label>
+         <input id="username" name="username" type="text"
+            class="px-4 py-2 border border-border rounded bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
+            placeholder="Enter your username" />
       </div>
-      <div class="flex flex-col items-center justify-center">
-         <form action="/login" method="post"
-            class="flex flex-col items-center justify-center bg-card h-full w-auto shadow-md shadow-border border-2 border-border rounded-lg">
 
-            <div
-               class="flex flex-col items-center justify-center bg-card h-full w-auto shadow-md shadow-border border-2 border-border rounded-lg">
-               <h1 class="text-text text-2xl">Username</h1>
-               <input name="username" type="text" class="w-full p-2 text-text border-2 border-border rounded-lg"
-                  placeholder="Username" />
-            </div>
-
-            <div
-               class="flex flex-col items-center justify-center bg-card h-full w-auto shadow-md shadow-border border-2 border-border rounded-lg">
-               <h1 class="text-text text-2xl">Password</h1>
-               <input name="password" type="password" class="w-full p-2 text-text border-2 border-border rounded-lg"
-                  placeholder="Password" />
-            </div>
-
-            <button type="submit"
-               class="flex flex-col items-center justify-center bg-primary h-full w-auto shadow-md shadow-border border-2 border-border rounded-lg hover:bg-secondary">
-               <p class="text-xl text-text">Login</p>
-            </button>
-         </form>
-
+      <!-- Password -->
+      <div class="flex flex-col">
+         <label for="password" class="text-lg mb-1">Password</label>
+         <input id="password" name="password" type="password"
+            class="px-4 py-2 border border-border rounded bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
+            placeholder="Enter your password" />
       </div>
+
+      <!-- Submit Button -->
+      <button type="submit"
+         class="w-full bg-primary hover:bg-secondary text-white py-2 rounded transition text-lg font-medium">
+         Login
+      </button>
+   </form>
 
 </body>
 

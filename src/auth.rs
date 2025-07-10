@@ -1,8 +1,10 @@
 use once_cell::sync::Lazy;
 use pam::{self, PamError, PamReturnCode};
-use std::{error::Error, fmt, os::unix::process::CommandExt};
-use tokio::sync::Mutex;
-use users::{self, User};
+use std::{error::Error, ffi::OsString, fmt, os::unix::process::CommandExt};
+use tokio::{io::AsyncReadExt, sync::Mutex};
+use users::{self, Group, User};
+
+use crate::dirs;
 pub static USER_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 #[derive(Debug)]
 pub enum AuthenticateError {
@@ -41,7 +43,7 @@ pub fn auth_user(username: &str, password: &str) -> Result<User, AuthenticateErr
     let user = users::get_user_by_name(username).unwrap();
     Ok(user)
 }
-pub fn is_sudo(user: User) -> bool {
+pub fn is_sudo(user: &User) -> bool {
     match user.groups() {
         Some(groups) => {
             for group in groups {
@@ -53,4 +55,13 @@ pub fn is_sudo(user: User) -> bool {
         }
         None => false,
     }
+}
+
+pub async fn is_group_leader(user: &User, group: &Group) -> bool {
+    let group_file = dirs().data_dir().join(group.name());
+    let mut file = tokio::fs::File::open(group_file).await.unwrap();
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).await.unwrap();
+    let leaders: Vec<OsString> = serde_json::from_str(&contents).unwrap();
+    leaders.contains(&user.name().into())
 }

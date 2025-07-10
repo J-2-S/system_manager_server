@@ -21,7 +21,6 @@
          fontSize: 14,
          convertEol: true,
       });
-
       const fitAddon = new window.FitAddon.FitAddon();
       const webLinksAddon = new window.WebLinksAddon.WebLinksAddon();
       const searchAddon = new window.SearchAddon.SearchAddon();
@@ -52,7 +51,7 @@
       };
 
       socket.onclose = function () {
-         term.write('\r\n[Disconnected from server]\r\n');
+         window.location.replace('/');
       };
 
       socket.onerror = function () {

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="utf-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>System Manager</title>
+   <link rel="stylesheet" href="/static/style.css" />
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      crossorigin="anonymous" referrerpolicy="no-referrer" />
+   <style>
+      body.menu-open .page-content {
+         margin-left: 16rem;
+         /* same width as sidebar */
+      }
+   </style>
+</head>
+
+<body class="bg-background text-text transition-all duration-300">
+
+   <!-- Sidebar menu -->
+   <div id="side-menu"
+      class="fixed top-0 left-0 h-full w-64 bg-card border-r border-border shadow-lg transform -translate-x-full transition-transform duration-300 z-50">
+      <div class="p-5 text-xl font-semibold border-b border-border">Menu</div>
+      <ul class="p-5 space-y-4">
+         <li><a href="/" class="hover:text-secondary">Dashboard</a></li>
+         <li><a href="/settings" class="hover:text-secondary">Settings</a></li>
+         <li><a href="/manage" class="hover:text-secondary">Manage</a></li>
+         <li><a href="/static/shell.html" class="hover:text-secondary">Shell</a></li>
+         <li><a href="/logout" class="hover:text-secondary">Logout</a></li>
+      </ul>
+   </div>
+
+   <!-- Main content -->
+   <div class="page-content min-h-screen flex flex-col gap-6 px-6 py-4 transition-all duration-300">
+      <!-- Header -->
+      <div class="bg-card border border-border rounded-lg shadow-md p-5 flex items-center justify-between">
+         <div class="flex items-center gap-4">
+            <i id="menu-icon" class="fas fa-bars cursor-pointer text-2xl"></i>
+            <span class="text-2xl font-semibold">Settings</span>
+         </div>
+      </div>
+
+      <!-- Settings Notice -->
+      <div class="text-center">
+         <h2 class="text-xl text-muted">Settings don't change until restart</h2>
+      </div>
+
+      <!-- Settings Form -->
+      <form action="/settings" method="post"
+         class="max-w-2xl mx-auto bg-card p-6 rounded-lg border border-border shadow">
+         <h3 class="text-2xl font-semibold mb-4">Thresholds</h3>
+         <div class="space-y-4">
+            <div>
+               <label for="low-storage" class="block text-lg mb-1">Storage minimum (%)</label>
+               <input type="number" name="low-storage" id="low-storage" value="{{low_storage}}"
+                  class="w-full px-3 py-2 border border-border rounded bg-background" />
+            </div>
+            <div>
+               <label for="low-power" class="block text-lg mb-1">Power minimum (%)</label>
+               <input type="number" name="low-power" id="low-power" value="{{low_power}}"
+                  class="w-full px-3 py-2 border border-border rounded bg-background" />
+            </div>
+         </div>
+
+         <div class="mt-6">
+            <label for="ignore-update" class="inline-flex items-center space-x-2">
+               <input type="checkbox" name="ignore-update" id="ignore-update" value="{{ignore_update}}"
+                  class="form-checkbox text-secondary" />
+               <span>Ignore updates</span>
+            </label>
+         </div>
+
+         <h3 class="text-2xl font-semibold mt-8 mb-4">Paths</h3>
+         <div class="space-y-4">
+            <div>
+               <label for="cert-path" class="block text-lg mb-1">Certificate path</label>
+               <input type="text" name="cert-path" id="cert-path" value="{{cert_path}}"
+                  class="w-full px-3 py-2 border border-border rounded bg-background" />
+            </div>
+            <div>
+               <label for="key-path" class="block text-lg mb-1">Key path</label>
+               <input type="text" name="key-path" id="key-path" value="{{key_path}}"
+                  class="w-full px-3 py-2 border border-border rounded bg-background" />
+            </div>
+         </div>
+
+         <div class="mt-6">
+            <button type="submit" class="w-full bg-primary text-white py-2 rounded hover:bg-primary-dark transition">
+               Save
+            </button>
+         </div>
+      </form>
+   </div>
+
+   <!-- Sidebar toggle -->
+   <script>
+      document.getElementById('menu-icon').addEventListener('click', () => {
+         const menu = document.getElementById('side-menu');
+         menu.classList.toggle('-translate-x-full');
+         document.body.classList.toggle('menu-open');
+      });
+   </script>
+</body>
+
+</html>

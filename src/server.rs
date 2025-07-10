@@ -1,7 +1,11 @@
 mod secure;
 use crate::handlers::shell::start_shell;
 use crate::handlers::status::get_status;
+use crate::settings;
 use crate::templates::HomeTemplate;
+use crate::templates::ManagementTemplate;
+use crate::templates::SettingsTemplate;
+use askama::Template;
 use axum::Form;
 use axum::http::Request;
 use axum::http::StatusCode;
@@ -11,13 +15,19 @@ use axum::routing::post;
 use axum::{Router, extract::WebSocketUpgrade, response::IntoResponse, routing::get};
 use secure::{CertError, load_ssl_config};
 use serde::Deserialize;
+use std::ffi::OsString;
 use std::{fmt, net::ToSocketAddrs, path::Path, sync::Arc};
 use system_manager_server::auth;
+use system_manager_server::auth::is_group_leader;
+use system_manager_server::auth::is_sudo;
 use tokio::net::TcpListener;
 use tokio::task;
 use tokio_rustls::TlsAcceptor;
 use tower_http::services;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer};
+use users::Group;
+use users::all_users;
+use users::os::unix::GroupExt;
 
 #[derive(Debug, Deserialize)]
 pub struct LoginForm {
@@ -65,9 +75,11 @@ where
 
     let app = Router::new()
         .route("/ws/shell", get(shell_handler))
-        .route("/ws/{*wildcard}", get(ws_handler))
+        .route("/settings", get(settings_handler))
+        .route("/settings", post(settings_save))
         .route("/", get(index))
         .route("/login", post(login))
+        .route("/manage", get(manage_handler))
         .route(
             "/login",
             get(async || Redirect::to("/static/login.html").into_response()),
@@ -121,6 +133,46 @@ async fn index(session: Session) -> AxumResult<impl IntoResponse> {
     Ok(Html(html.to_string()).into_response())
 }
 
+#[derive(Debug, Deserialize)]
+struct SettingsForm {
+    low_storage: u8,
+    low_power: u8,
+    ignore_update: bool,
+    key_path: String,
+    cert_path: String,
+}
+async fn settings_save(
+    session: Session,
+    Form(settings): Form<SettingsForm>,
+) -> AxumResult<impl IntoResponse> {
+    let username: String = session
+        .get("username")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .unwrap_or_default();
+    let password: String = session
+        .get("password")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .unwrap_or_default();
+    if username.is_empty() || password.is_empty() {
+        Ok(Redirect::to("/static/login.html").into_response())
+    } else if let Ok(user) = auth::auth_user(&username, &password) {
+        if !is_sudo(&user) {
+            return Ok(Redirect::to("/").into_response());
+        }
+        let mut sets = settings::load_settings().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        sets.thresholds.low_storage = settings.low_storage;
+        sets.thresholds.low_power = settings.low_power;
+        sets.ignore_update = settings.ignore_update;
+        sets.paths.key_path = settings.key_path;
+        sets.paths.cert_path = settings.cert_path;
+        settings::save_settings(&sets).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        Ok(Redirect::to("/settings").into_response())
+    } else {
+        Ok(Redirect::to("/static/login.html").into_response())
+    }
+}
 async fn login(session: Session, Form(login): Form<LoginForm>) -> AxumResult<impl IntoResponse> {
     let username = login.username;
     let password = login.password;
@@ -176,6 +228,64 @@ async fn shell_handler(ws: WebSocketUpgrade, session: Session) -> AxumResult<imp
         }
     }
 }
-async fn ws_handler<T>(ws: WebSocketUpgrade, req: Request<T>) -> impl IntoResponse {
-    ws.on_upgrade(|socket| async move { todo!() })
+async fn manage_handler(session: Session) -> AxumResult<impl IntoResponse> {
+    let username: String = session
+        .get("username")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .unwrap_or_default();
+    let password: String = session
+        .get("password")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .unwrap_or_default();
+    if username.is_empty() || password.is_empty() {
+        Ok(Redirect::to("/static/login.html").into_response())
+    } else if let Ok(user) = auth::auth_user(&username, &password) {
+        if is_sudo(&user) {
+            let mut groups = sysinfo::Groups::new_with_refreshed_list()
+                .iter()
+                .map(|g| g.name().to_owned())
+                .collect::<Vec<String>>();
+            groups.push("all".into());
+            let html = ManagementTemplate { groups };
+            Ok(Html(html.render().unwrap()).into_response())
+        } else {
+            let groups = user.groups().unwrap_or_default();
+            let mut names = Vec::new();
+            for group in groups {
+                if is_group_leader(&user, &group).await {
+                    names.push(group.name().to_owned().to_string_lossy().into_owned());
+                }
+            }
+            let html = ManagementTemplate { groups: names };
+            Ok(Html(html.render().unwrap()).into_response())
+        }
+    } else {
+        Ok(Redirect::to("/static/login.html").into_response())
+    }
+}
+async fn settings_handler(session: Session) -> AxumResult<impl IntoResponse> {
+    let username: String = session
+        .get("username")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .unwrap_or_default();
+    let password: String = session
+        .get("password")
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .unwrap_or_default();
+    if username.is_empty() || password.is_empty() {
+        Ok(Redirect::to("/static/login.html").into_response())
+    } else if let Ok(user) = auth::auth_user(&username, &password) {
+        if !is_sudo(&user) {
+            return Ok(Redirect::to("/").into_response());
+        }
+        let sets = settings::load_settings().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let html: SettingsTemplate = sets.into();
+        Ok(Html(html.render().unwrap()).into_response())
+    } else {
+        Ok(Redirect::to("/static/login.html").into_response())
+    }
 }
