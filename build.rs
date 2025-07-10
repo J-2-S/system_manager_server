@@ -5,6 +5,10 @@ use std::{
 };
 
 fn main() {
+    cbindgen::generate(".")
+        .expect("Unable to generate bindings")
+        .write_to_file("SystemManager.h");
+
     // Path to the input Tailwind CSS file
     let input_css = Path::new("global.css");
 
