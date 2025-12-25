@@ -34,7 +34,9 @@ impl From<PamError> for AuthenticateError {
         }
     }
 }
-
+pub unsafe fn get_users() -> impl Iterator<Item = User> {
+    unsafe { users::all_users().filter(|u| if u.uid() >= 1000 { true } else { false }) }
+}
 pub fn auth_user(username: &str, password: &str) -> Result<User, AuthenticateError> {
     let mut auth = pam::Client::with_password("login")?;
     auth.conversation_mut().set_credentials(username, password);

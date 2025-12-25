@@ -7,6 +7,7 @@ use crate::templates::ManagementTemplate;
 use crate::templates::SettingsTemplate;
 use askama::Template;
 use axum::Form;
+use axum::extract::Path as WebPath;
 use axum::http::StatusCode;
 use axum::response::Result as AxumResult;
 use axum::response::{Html, Redirect};
@@ -16,6 +17,7 @@ use secure::{CertError, load_ssl_config};
 use serde::Deserialize;
 use std::{fmt, net::ToSocketAddrs, path::Path, sync::Arc};
 use system_manager_server::auth;
+use system_manager_server::auth::get_users;
 use system_manager_server::auth::is_group_leader;
 use system_manager_server::auth::is_sudo;
 use tokio::net::TcpListener;
@@ -75,6 +77,7 @@ where
         .route("/", get(index))
         .route("/login", post(login))
         .route("/manage", get(manage_handler))
+        .route("/user/{*username}", get(user_page))
         .route(
             "/login",
             get(async || Redirect::to("/static/login.html").into_response()),
@@ -238,23 +241,15 @@ async fn manage_handler(session: Session) -> AxumResult<impl IntoResponse> {
         Ok(Redirect::to("/static/login.html").into_response())
     } else if let Ok(user) = auth::auth_user(&username, &password) {
         if is_sudo(&user) {
-            let mut groups = sysinfo::Groups::new_with_refreshed_list()
-                .iter()
-                .map(|g| g.name().to_owned())
-                .collect::<Vec<String>>();
-            groups.push("all".into());
-            let html = ManagementTemplate { groups };
+            let users = unsafe {
+                get_users()
+                    .map(|u| u.name().to_string_lossy().into_owned())
+                    .collect::<Vec<String>>()
+            };
+            let html = ManagementTemplate { users };
             Ok(Html(html.render().unwrap()).into_response())
         } else {
-            let groups = user.groups().unwrap_or_default();
-            let mut names = Vec::new();
-            for group in groups {
-                if is_group_leader(&user, &group).await {
-                    names.push(group.name().to_owned().to_string_lossy().into_owned());
-                }
-            }
-            let html = ManagementTemplate { groups: names };
-            Ok(Html(html.render().unwrap()).into_response())
+            Ok(Redirect::to("/").into_response())
         }
     } else {
         Ok(Redirect::to("/static/login.html").into_response())
@@ -283,4 +278,10 @@ async fn settings_handler(session: Session) -> AxumResult<impl IntoResponse> {
     } else {
         Ok(Redirect::to("/static/login.html").into_response())
     }
+}
+async fn user_page(
+    WebPath(username): WebPath<String>,
+    session: Session,
+) -> AxumResult<impl IntoResponse> {
+    Ok(Html(format!("username: {}", username)).into_response())
 }

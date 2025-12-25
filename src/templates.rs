@@ -33,5 +33,5 @@ impl From<Settings> for SettingsTemplate {
 #[derive(Template)]
 #[template(path = "management.html")]
 pub struct ManagementTemplate {
-    pub groups: Vec<String>,
+    pub users: Vec<String>,
 }
