@@ -1,4 +1,5 @@
 use std::path::Path;
+mod auth;
 mod handlers;
 mod server;
 mod settings;

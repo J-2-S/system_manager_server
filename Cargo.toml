@@ -22,7 +22,6 @@ futures = "0.3.31"
 futures-util = "0.3.31"
 libc = "0.2.171"
 libloading = "0.8.8"
-once_cell = "1.21.3"
 pam = "0.8.0"
 rand = "0.9.1"
 rustls = "0.23.25"
@@ -37,5 +36,4 @@ tower-http = { version = "0.6.6", features = ["fs"] }
 tower-sessions = "0.14.0"
 users = "0.11.0"
 
-[build-dependencies]
-cbindgen = "0.29.0"
+

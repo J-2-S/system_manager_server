@@ -1,4 +1,3 @@
-pub mod shell;
 pub mod status;
 pub mod users;
 use std::error::Error;
