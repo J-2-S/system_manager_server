@@ -1,3 +1,5 @@
 /target
 node_modules/
 build/
+dev.crt
+dev.key
