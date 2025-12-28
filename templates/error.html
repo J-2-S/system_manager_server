@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="utf-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>System Manager</title>
+   <link rel="stylesheet" href="/static/style.css" />
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      crossorigin="anonymous" referrerpolicy="no-referrer" />
+   <style>
+      body.menu-open .page-content {
+         margin-left: 16rem;
+         /* match sidebar width */
+      }
+   </style>
+</head>
+<body class="bg-background text-text transition-all duration-300">
+   <div class="flex flex-col items-center justify-center min-h-screen">
+      <div class="bg-card border border-border rounded-lg shadow-md p-5 flex items-center justify-between">
+         <div class="flex items-center gap-4">
+            <i id="menu-icon" class="fas fa-bars cursor-pointer text-2xl"></i>
+            <span class="text-2xl font-semibold">Error</span>
+         </div>
+      </div>
+      <!-- Error Message -->
+      <div class="text-center">
+         <h2 class="text-xl text-muted">An error occurred</h2>
+         <p class="text-lg text-muted">
+            {{error}}
+         </p>
+      </div>
+   </div>
+
+   <!-- Scripts -->
+   <script src="/static/sidemenu.js"></script>
+</body>
+
+</html>  

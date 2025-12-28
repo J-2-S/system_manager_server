@@ -1,0 +1,9 @@
+port = 8080
+cert_path = "/etc/system_manager_server/cert.pem"
+key_path = "/etc/system_manager_server/key.pem"
+hostname = "0.0.0.0"
+ignore_updates = false
+
+[threatsholds]
+low_power = 15
+low_storage = 15

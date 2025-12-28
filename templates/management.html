@@ -27,7 +27,6 @@
          <li><a href="/" class="hover:text-secondary">Dashboard</a></li>
          <li><a href="/settings" class="hover:text-secondary">Settings</a></li>
          <li><a href="/manage" class="hover:text-secondary">Manage</a></li>
-         <li><a href="/static/shell.html" class="hover:text-secondary">Shell</a></li>
          <li><a href="/logout" class="hover:text-secondary">Logout</a></li>
       </ul>
    </div>
@@ -49,7 +48,7 @@
             class="bg-card border border-border rounded-lg shadow-md p-4 w-full max-w-lg max-h-[60vh] overflow-y-auto space-y-2">
             <ul class="space-y-1">
                {% for user in users %}
-               <li class="border-b border-border pb-1">{{ user }}</li>
+               <a href="/manage/{{user}}"><li class="bg-gray-700 rounded-lg p-2 text-white hover:bg-gray-600">{{ user }}</li></a>
                {% endfor %}
             </ul>
          </div>
@@ -57,16 +56,7 @@
    </div>
 
    <!-- Scripts -->
-   <script>
-      const body = document.body;
-      const menu = document.getElementById('side-menu');
-      const menuIcon = document.getElementById('menu-icon');
-
-      menuIcon.addEventListener('click', () => {
-         menu.classList.toggle('-translate-x-full');
-         body.classList.toggle('menu-open');
-      });
-   </script>
+   <script src="/static/sidemenu.js"></script>
    <script src="/static/home.js"></script>
 
 </body>

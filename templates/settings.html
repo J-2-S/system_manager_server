@@ -27,7 +27,6 @@
          <li><a href="/" class="hover:text-secondary">Dashboard</a></li>
          <li><a href="/settings" class="hover:text-secondary">Settings</a></li>
          <li><a href="/manage" class="hover:text-secondary">Manage</a></li>
-         <li><a href="/static/shell.html" class="hover:text-secondary">Shell</a></li>
          <li><a href="/logout" class="hover:text-secondary">Logout</a></li>
       </ul>
    </div>
@@ -41,32 +40,30 @@
             <span class="text-2xl font-semibold">Settings</span>
          </div>
       </div>
-
-      <!-- Settings Notice -->
-      <div class="text-center">
-         <h2 class="text-xl text-muted">Settings don't change until restart</h2>
-      </div>
-
+   <!-- Settings Notice -->
+   <div class="text-center">
+      <h2 class="text-xl text-muted">Not all settings change until you restart the server</h2>
+   </div>
       <!-- Settings Form -->
       <form action="/settings" method="post"
          class="max-w-2xl mx-auto bg-card p-6 rounded-lg border border-border shadow">
          <h3 class="text-2xl font-semibold mb-4">Thresholds</h3>
          <div class="space-y-4">
             <div>
-               <label for="low-storage" class="block text-lg mb-1">Storage minimum (%)</label>
-               <input type="number" name="low-storage" id="low-storage" value="{{low_storage}}"
+               <label for="low_storage" class="block text-lg mb-1">Storage minimum (%)</label>
+               <input type="number" name="low_storage" id="low_storage" value="{{low_storage}}"
                   class="w-full px-3 py-2 border border-border rounded bg-background" />
             </div>
             <div>
-               <label for="low-power" class="block text-lg mb-1">Power minimum (%)</label>
-               <input type="number" name="low-power" id="low-power" value="{{low_power}}"
+               <label for="low_power" class="block text-lg mb-1">Power minimum (%)</label>
+               <input type="number" name="low_power" id="low_power" value="{{low_power}}"
                   class="w-full px-3 py-2 border border-border rounded bg-background" />
             </div>
          </div>
 
          <div class="mt-6">
-            <label for="ignore-update" class="inline-flex items-center space-x-2">
-               <input type="checkbox" name="ignore-update" id="ignore-update" value="{{ignore_update}}"
+            <label for="ignore_update" class="inline-flex items-center space-x-2">
+               <input type="checkbox" name="ignore_update" id="ignore_update" value="{{ignore_update}}"
                   class="form-checkbox text-secondary" />
                <span>Ignore updates</span>
             </label>
@@ -75,15 +72,25 @@
          <h3 class="text-2xl font-semibold mt-8 mb-4">Paths</h3>
          <div class="space-y-4">
             <div>
-               <label for="cert-path" class="block text-lg mb-1">Certificate path</label>
-               <input type="text" name="cert-path" id="cert-path" value="{{cert_path}}"
+               <label for="cert_path" class="block text-lg mb-1">Certificate path</label>
+               <input type="text" name="cert_path" id="cert_path" value="{{cert_path}}"
                   class="w-full px-3 py-2 border border-border rounded bg-background" />
             </div>
             <div>
-               <label for="key-path" class="block text-lg mb-1">Key path</label>
-               <input type="text" name="key-path" id="key-path" value="{{key_path}}"
+               <label for="key_path" class="block text-lg mb-1">Key path</label>
+               <input type="text" name="key_path" id="key_path" value="{{key_path}}"
                   class="w-full px-3 py-2 border border-border rounded bg-background" />
             </div>
+         </div>
+         <div class="mt-6">
+            <label for="port" class="block text-lg mb-1">Port</label>
+            <input type="number" name="port" id="port" value="{{port}}"
+               class="w-full px-3 py-2 border border-border rounded bg-background" />
+         </div>
+         <div class="mt-6">
+            <label for="hostname" class="block text-lg mb-1">Hostname</label>
+            <input type="text" name="hostname" id="hostname" value="{{hostname}}"
+               class="w-full px-3 py-2 border border-border rounded bg-background" />
          </div>
 
          <div class="mt-6">
@@ -102,6 +109,58 @@
          document.body.classList.toggle('menu-open');
       });
    </script>
+   <script>
+      function isValidUnixPath(path) {
+          if (typeof path !== "string") return false;
+          if (!path.length) return false;
+          if (path.includes("\0")) return false; // null byte is invalid
+          return true;
+      }
+
+      const body = document.body;
+      const low_storage = document.getElementById('low_storage');
+      const low_power = document.getElementById('low_power');
+      // ensure that the values are between 0 and 100
+      low_storage.addEventListener('change', () => {
+         if(number(low_storage.value) > 100) {
+            low_storage.value = 100;
+         }
+      });
+      low_power.addEventListener('change', () => {
+         if(number(low_power.value) > 100) {
+            low_power.value = 100;
+         }
+      });
+      //ensure that cert path and key path are not empty and valid paths
+      const cert_path = document.getElementById('cert_path');
+      const key_path = document.getElementById('key_path');
+      cert_path.addEventListener('change', () => {
+         if(!isValidUnixPath(cert_path.value)) {
+            cert_path.value = "/";
+         }
+      });
+      key_path.addEventListener('change', () => {
+         if(key_path.value.trim() === "") {
+            if(!isValidUnixPath(cert_path.value)) {
+               key_path.value = "/";
+            }
+         }
+      });
+      //ensure that port is a valid number and that that the hostname is not empty
+      const port = document.getElementById('port');
+      const hostname = document.getElementById('hostname');
+      port.addEventListener('change', () => {
+         if(isNaN(port.value) || port.value < 1 || port.value > 65535) {
+            port.value = 8080;
+         }
+      });
+      hostname.addEventListener('change', () => {
+         if(hostname.value.trim() === "") {
+            hostname.value = "0.0.0.0";
+         }
+      });
+
+      </script>
 </body>
 
 </html>

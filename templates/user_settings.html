@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="utf-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>System Manager</title>
+   <link rel="stylesheet" href="/static/style.css" />
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      crossorigin="anonymous" referrerpolicy="no-referrer" />
+   <style>
+      body.menu-open .page-content {
+         margin-left: 16rem;
+         /* same width as sidebar */
+      }
+   </style>
+</head>
+
+<body class="bg-background text-text transition-all duration-300">
+
+   <!-- Sidebar menu -->
+   <div id="side-menu"
+      class="fixed top-0 left-0 h-full w-64 bg-card border-r border-border shadow-lg transform -translate-x-full transition-transform duration-300 z-50">
+      <div class="p-5 text-xl font-semibold border-b border-border">Menu</div>
+      <ul class="p-5 space-y-4">
+         <li><a href="/" class="hover:text-secondary">Dashboard</a></li>
+         <li><a href="/settings" class="hover:text-secondary">Settings</a></li>
+         <li><a href="/manage" class="hover:text-secondary">Manage</a></li>
+         <li><a href="/logout" class="hover:text-secondary">Logout</a></li>
+      </ul>
+   </div>
+
+   <!-- Main content -->
+   <div class="page-content min-h-screen flex flex-col gap-6 px-6 py-4 transition-all duration-300">
+      <!-- Header -->
+      <div class="bg-card border border-border rounded-lg shadow-md p-5 flex items-center justify-between">
+         <div class="flex items-center gap-4">
+            <i id="menu-icon" class="fas fa-bars cursor-pointer text-2xl"></i>
+            <span class="text-2xl font-semibold">Settings</span>
+         </div>
+      </div>
+      <!-- User Settings Form -->
+      <form action="/manage/{{user}}" method="post" class="max-w-2xl mx-auto bg-card p-6 rounded-lg border border-border shadow">
+      <div class="max-w-2xl mx-auto bg-card p-6 rounded-lg border border-border shadow">
+         <div class="mt-6">
+            <label for="admin" class="inline-flex items-center space-x-2">
+               <input type="checkbox" name="admin" id="admin" value="true" {% if admin %}checked{% endif %}
+                  class="form-checkbox text-secondary" />
+               <span>Admin</span>
+            </label>
+         </div>
+         <div class="mt-6">
+            <label for="storage" class="block text-lg mb-1">Storage</label>
+            <input type="number" name="storage" id="storage" value="{{storage}}"
+               class="w-full px-3 py-2 border border-border rounded bg-background" />
+         </div>
+         <div class="mt-6 relative">
+            <label for="password" class="block text-lg mb-1">Password (leave blank to keep current)</label>
+            <input type="password" name="password" id="password" value=""/>
+                <i id="toggle-password" class="fas fa-eye absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"></i>
+         </div>
+         <button type="submit" class="w-full bg-primary text-white py-2 rounded hover:bg-primary-dark transition"> Save </button>
+      </form>
+    <script>
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggle-password');
+
+        toggleIcon.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        });
+    </script>
+    <script src="/static/sidemenu.js"></script>
+</body>
+
+</html>

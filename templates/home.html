@@ -25,9 +25,10 @@
       <div class="p-5 text-xl font-semibold border-b border-border">Menu</div>
       <ul id="menu-list" class="p-5 space-y-4">
          <li><a href="/" class="hover:text-secondary">Dashboard</a></li>
-         <li><a href="/settings" class="hover:text-secondary">Settings</a></li>
-         <li><a href="/manage" class="hover:text-secondary">Manage</a></li>
-         <li><a href="/static/shell.html" class="hover:text-secondary">Shell</a></li>
+         {% if is_admin %}
+            <li><a href="/settings" class="hover:text-secondary">Settings</a></li>
+            <li><a href="/manage" class="hover:text-secondary">Manage</a></li>
+         {% endif %}
          <li><a href="/logout" class="hover:text-secondary">Logout</a></li>
       </ul>
    </div>
@@ -56,21 +57,13 @@
             <p class="text-lg">Low Power: <span class="font-medium">{{low_power}}</span></p>
             <p class="text-lg">Low Storage: <span class="font-medium">{{low_storage}}</span></p>
             <p class="text-lg">Updates Available: <span class="font-medium">{{updates_available}}</span></p>
+            <p class="text-lg">Restart Pending: <span class="font-medium">{{restart_pending}}</span></p>
          </div>
       </div>
    </div>
 
    <!-- Scripts -->
-   <script>
-      const body = document.body;
-      const menu = document.getElementById('side-menu');
-      const menuIcon = document.getElementById('menu-icon');
-
-      menuIcon.addEventListener('click', () => {
-         menu.classList.toggle('-translate-x-full');
-         body.classList.toggle('menu-open');
-      });
-   </script>
+   <script src="/static/sidemenu.js"></script>
    <script src="/static/home.js"></script>
 </body>
 

@@ -1,92 +1,95 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use std::fs::File;
-use std::io::{self, Read, Write};
-const SETTINGS_FILE: &str = "./settings.json";
+use tokio::fs;
 
-#[derive(Debug)]
-pub enum SettingError {
-    IOError(io::Error),
-    JsonError(serde_json::Error),
-}
-impl Error for SettingError {}
-impl std::fmt::Display for SettingError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::IOError(error) => write!(f, "{}", error),
-            Self::JsonError(error) => write!(f, "{}", error),
-        }
-    }
-}
-impl From<io::Error> for SettingError {
-    fn from(value: io::Error) -> Self {
-        Self::IOError(value)
-    }
-}
-impl From<serde_json::Error> for SettingError {
-    fn from(value: serde_json::Error) -> Self {
-        Self::JsonError(value)
-    }
-}
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct Thresholds {
-    pub low_storage: u8,
-    pub low_power: u8,
-}
+use crate::{RESTART_PENDING, router::templates::SettingsTemplate};
+#[cfg(not(debug_assertions))]
+const SETTINGS_PATH: &str = "/var/lib/system_manager_server/settings.toml";
+#[cfg(debug_assertions)]
+const SETTINGS_PATH: &str = "./settings.toml";
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct Paths {
-    pub cert_path: String,
-    pub key_path: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Settings {
-    pub thresholds: Thresholds,
-    pub paths: Paths,
-    pub ignore_update: bool,
+    pub port: u16,
+    pub cert_path: PathBuf,
+    pub key_path: PathBuf,
+    pub hostname: String,
+    pub ignore_updates: bool,
+    pub threatsholds: Threasholds,
+}
+impl Settings {
+    pub fn secure(&self) -> bool {
+        self.cert_path.exists() && self.key_path.exists()
+    }
 }
 
-pub fn save_settings(settings: &Settings) -> Result<(), SettingError> {
-    let encoded = serde_json::to_string_pretty(settings)?;
-    let mut file = File::create(SETTINGS_FILE)?;
-    file.write_all(encoded.as_bytes())?;
-
-    Ok(())
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Threasholds {
+    pub low_power: u8,
+    pub low_storage: u8,
 }
 
-pub fn load_settings() -> Result<Settings, SettingError> {
-    let mut file = File::open(SETTINGS_FILE)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    let settings = serde_json::from_str(&contents)?;
-    Ok(settings)
-}
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            thresholds: Thresholds {
-                low_storage: 80,
-                low_power: 25,
-            },
-            paths: Paths {
-                cert_path: String::from("/"), // This is a temp thing will will actual set a
-                // default path later
-                key_path: String::from("/"),
-            },
-            ignore_update: false,
+            port: 8080,
+            cert_path: PathBuf::from("/etc/system_manager_server/cert.pem"),
+            key_path: PathBuf::from("/etc/system_manager_server/key.pem"),
+            hostname: String::from("0.0.0.0"),
+            ignore_updates: false,
+            threatsholds: Threasholds::default(),
         }
     }
 }
 
-pub fn get_or_create_settings() -> Result<Settings, SettingError> {
-    match load_settings() {
-        Ok(settings) => Ok(settings),
-        Err(_) => {
-            // If settings file is missing or invalid, create default settings.
-            let default_settings = Settings::default();
-            save_settings(&default_settings)?;
-            Ok(default_settings)
+impl Default for Threasholds {
+    fn default() -> Self {
+        Self {
+            low_power: 15,
+            low_storage: 15,
         }
+    }
+}
+impl Into<SettingsTemplate> for Settings {
+    fn into(self) -> SettingsTemplate {
+        SettingsTemplate {
+            low_storage: self.threatsholds.low_storage,
+            low_power: self.threatsholds.low_power,
+            ignore_update: self.ignore_updates,
+            cert_path: self.cert_path.to_string_lossy().to_string(),
+            key_path: self.key_path.to_string_lossy().to_string(),
+            port: self.port,
+            hostname: self.hostname.to_string(),
+        }
+    }
+}
+pub async fn load_settings() -> Settings {
+    let content = match fs::read_to_string(SETTINGS_PATH).await {
+        Ok(value) => value,
+        Err(error) => {
+            log::error!(
+                "Failed to read settings due to error: {}\nUsing default settings",
+                error
+            );
+            return Settings::default();
+        }
+    };
+    match toml::from_str(&content) {
+        Ok(value) => value,
+        Err(error) => {
+            log::error!(
+                "Failed to parse settings due to error: {}\nUsing default settings",
+                error
+            );
+            return Settings::default();
+        }
+    }
+}
+pub async fn save_settings(settings: Settings) {
+    RESTART_PENDING.store(true, std::sync::atomic::Ordering::Relaxed); // Set restart pending to true so they know to restart the system
+    let content = toml::to_string(&settings).unwrap(); // This should never fail
+    if let Err(error) = fs::write(SETTINGS_PATH, content).await {
+        log::error!("Failed to save settings due to error: {}", error);
     }
 }
