@@ -1,14 +1,20 @@
+//! # Settings
+//!
+//! This module contains the logic for loading and saving the application settings.
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::{RESTART_PENDING, router::templates::SettingsTemplate};
+
+/// The path to the settings file.
 #[cfg(not(debug_assertions))]
 const SETTINGS_PATH: &str = "/var/lib/system_manager_server/settings.toml";
 #[cfg(debug_assertions)]
 const SETTINGS_PATH: &str = "./settings.toml";
 
+/// The application settings.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Settings {
     pub port: u16,
@@ -18,12 +24,9 @@ pub struct Settings {
     pub ignore_updates: bool,
     pub threatsholds: Threasholds,
 }
-impl Settings {
-    pub fn secure(&self) -> bool {
-        self.cert_path.exists() && self.key_path.exists()
-    }
-}
+impl Settings {}
 
+/// The thresholds for the system status.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Threasholds {
     pub low_power: u8,
@@ -51,19 +54,21 @@ impl Default for Threasholds {
         }
     }
 }
-impl Into<SettingsTemplate> for Settings {
-    fn into(self) -> SettingsTemplate {
+impl From<Settings> for SettingsTemplate {
+    fn from(val: Settings) -> Self {
         SettingsTemplate {
-            low_storage: self.threatsholds.low_storage,
-            low_power: self.threatsholds.low_power,
-            ignore_update: self.ignore_updates,
-            cert_path: self.cert_path.to_string_lossy().to_string(),
-            key_path: self.key_path.to_string_lossy().to_string(),
-            port: self.port,
-            hostname: self.hostname.to_string(),
+            low_storage: val.threatsholds.low_storage,
+            low_power: val.threatsholds.low_power,
+            ignore_update: val.ignore_updates,
+            cert_path: val.cert_path.to_string_lossy().to_string(),
+            key_path: val.key_path.to_string_lossy().to_string(),
+            port: val.port,
+            hostname: val.hostname.to_string(),
         }
     }
 }
+
+/// Loads the settings from the settings file.
 pub async fn load_settings() -> Settings {
     let content = match fs::read_to_string(SETTINGS_PATH).await {
         Ok(value) => value,
@@ -72,7 +77,7 @@ pub async fn load_settings() -> Settings {
                 "Failed to read settings due to error: {}\nUsing default settings",
                 error
             );
-            return Settings::default();
+            toml::to_string(&Settings::default()).unwrap()
         }
     };
     match toml::from_str(&content) {
@@ -82,10 +87,12 @@ pub async fn load_settings() -> Settings {
                 "Failed to parse settings due to error: {}\nUsing default settings",
                 error
             );
-            return Settings::default();
+            Settings::default()
         }
     }
 }
+
+/// Saves the settings to the settings file.
 pub async fn save_settings(settings: Settings) {
     RESTART_PENDING.store(true, std::sync::atomic::Ordering::Relaxed); // Set restart pending to true so they know to restart the system
     let content = toml::to_string(&settings).unwrap(); // This should never fail

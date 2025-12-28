@@ -9,7 +9,7 @@ use axum::{
     routing::{get, post},
 };
 use serde::Deserialize;
-use tokio::{net::TcpListener, task};
+use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
 
@@ -22,6 +22,7 @@ use crate::{
 };
 pub mod templates;
 
+/// Renders a template or returns an error response.
 macro_rules! render {
     ($template:expr) => {
         match $template.render() {
@@ -34,6 +35,8 @@ macro_rules! render {
         }
     };
 }
+
+/// Spawns a blocking task and returns its result or an error response.
 macro_rules! tokio_blocking {
     ($task:expr) => {
         match tokio::task::spawn_blocking($task).await {
@@ -49,21 +52,8 @@ macro_rules! tokio_blocking {
         }
     };
 }
-macro_rules! tokio_async {
-    ($task:expr) => {
-        match task::spawn($task).await {
-            Ok(value) => value,
-            Err(error) => {
-                log::error!("Failed to handle request due to runtime error: {}", &error);
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to handle request due to runtime error",
-                )
-                    .into_response();
-            }
-        }
-    };
-}
+
+/// Handles a `Result` or returns an error response.
 macro_rules! err_response {
     ($error:expr) => {
         match $error {
@@ -75,6 +65,8 @@ macro_rules! err_response {
         }
     };
 }
+
+/// Gets the current user from the session or redirects to the login page.
 macro_rules! get_current_user {
     ($session:expr) => {
         if let Some(username) = $session.get::<String>("username").await.unwrap_or_default() {
@@ -84,14 +76,19 @@ macro_rules! get_current_user {
         }
     };
 }
-static mut SESSION_USER: LazyLock<HashMap<String, Id>> = LazyLock::new(|| HashMap::new());
+
+/// Initializes the router and starts the server.
 pub async fn init_router() {
+    // Create a default user for testing purposes
     let mut user = users::User::new("linuxman", "!!Oct06Yes").await.unwrap();
     *user.admin_mut() = true;
     user.save().await.unwrap();
+
+    // Create a session layer
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store).with_secure(false); // Set to true in production with HTTPS
 
+    // Bind to a port
     let listener = match TcpListener::bind("0.0.0.0:8080").await {
         Ok(value) => value,
         Err(error) => {
@@ -100,6 +97,7 @@ pub async fn init_router() {
         }
     };
 
+    // Create the router
     let router = Router::new()
         .route("/", get(index))
         .route("/login", post(login))
@@ -113,6 +111,7 @@ pub async fn init_router() {
         .nest_service("/static/", ServeDir::new("static"))
         .layer(session_layer);
 
+    // Start the server
     if let Err(error) = axum::serve(listener, router).await {
         log::error!("Failed to start server: {}", error);
         std::process::exit(1);
@@ -221,17 +220,17 @@ struct SettingsForm {
     port: u16,
 }
 
-impl Into<Settings> for SettingsForm {
-    fn into(self) -> Settings {
+impl From<SettingsForm> for Settings {
+    fn from(val: SettingsForm) -> Self {
         Settings {
-            port: self.port,
-            cert_path: self.cert_path.into(),
-            key_path: self.key_path.into(),
-            hostname: self.hostname.into(),
-            ignore_updates: self.ignore_update,
+            port: val.port,
+            cert_path: val.cert_path.into(),
+            key_path: val.key_path.into(),
+            hostname: val.hostname,
+            ignore_updates: val.ignore_update,
             threatsholds: settings::Threasholds {
-                low_power: self.low_power,
-                low_storage: self.low_storage,
+                low_power: val.low_power,
+                low_storage: val.low_storage,
             },
         }
     }

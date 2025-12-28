@@ -44,7 +44,7 @@ pub fn list_installed_packages() -> Vec<String> {
 
     run_command(command)
         .map(|output| output.lines().map(|s| s.to_string()).collect())
-        .unwrap_or_else(Vec::new)
+        .unwrap_or_default()
 }
 
 // Parses available updates into a Vec<(String, String)> (package name, new version)
@@ -68,9 +68,8 @@ pub fn check_updates() -> Vec<(String, String)> {
                 })
                 .collect()
         })
-        .unwrap_or_else(Vec::new)
+        .unwrap_or_default()
 }
-
 
 // Updates packages
 pub fn update_packages() {
@@ -85,18 +84,15 @@ pub fn update_packages() {
         println!("  {} -> {}", pkg, version);
     }
 
-
-        let update_command = match detect_package_manager() {
-            Some("apt") => "apt update && apt upgrade -y",
-            Some("dnf") => "dnf upgrade -y",
-            Some("yum") => "yum update -y",
-            Some("zypper") => "zypper refresh && zypper update -y",
-            Some("pacman") => "pacman -Syu --noconfirm",
-            _ => return,
-        };
-        println!("Updating packages...");
-        let _ = Command::new("sh").arg("-c").arg(update_command).status();
-        println!("Update complete.");
+    let update_command = match detect_package_manager() {
+        Some("apt") => "apt update && apt upgrade -y",
+        Some("dnf") => "dnf upgrade -y",
+        Some("yum") => "yum update -y",
+        Some("zypper") => "zypper refresh && zypper update -y",
+        Some("pacman") => "pacman -Syu --noconfirm",
+        _ => return,
+    };
+    println!("Updating packages...");
+    let _ = Command::new("sh").arg("-c").arg(update_command).status();
+    println!("Update complete.");
 }
-
-

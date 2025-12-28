@@ -37,8 +37,3 @@ pub struct UserSettingsTemplate {
     pub admin: bool,
     pub user: String,
 }
-#[derive(Template)]
-#[template(path = "error.html")]
-pub struct ErrorTemplate {
-    pub error: String,
-}

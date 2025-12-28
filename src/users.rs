@@ -1,5 +1,7 @@
+//! # Users
+//!
+//! This module contains the logic for managing users.
 use std::{
-    collections::HashMap,
     path::PathBuf,
     str::FromStr,
     sync::{LazyLock, Once},
@@ -7,15 +9,13 @@ use std::{
 
 use argon2::{
     Argon2, PasswordVerifier,
-    password_hash::{
-        self, PasswordHashString, PasswordHasher, SaltString,
-        rand_core::{OsRng, RngCore},
-    },
+    password_hash::{self, PasswordHashString, PasswordHasher, SaltString, rand_core::OsRng},
 };
 use axum::{http::StatusCode, response::IntoResponse};
-use base64::Engine;
 use serde::{Deserialize, Serialize};
 use tokio::{fs, sync::RwLock, task};
+
+/// The path to the users directory.
 #[cfg(not(debug_assertions))]
 #[cfg(target_os = "linux")]
 const USERS_PATH: &str = "/var/lib/system_manager_server/users";
@@ -26,13 +26,16 @@ compile_error!("Only Linux is supported right now");
 
 #[cfg(debug_assertions)]
 const USERS_PATH: &str = "./users";
-static PASSWORD_HASHER: LazyLock<Argon2> = LazyLock::new(|| Argon2::default());
+
+/// The password hasher.
+static PASSWORD_HASHER: LazyLock<Argon2> = LazyLock::new(Argon2::default);
+
+/// An error that can occur when managing users.
 #[derive(Debug)]
 pub enum UserError {
     IoError(std::io::Error),
     PasswordError,
     UserNotFound,
-    UserExists,
     Other(String),
 }
 impl From<std::io::Error> for UserError {
@@ -53,7 +56,6 @@ impl std::fmt::Display for UserError {
             Self::IoError(error) => write!(f, "IO Error: {error}"),
             Self::PasswordError => write!(f, "Password Error"),
             Self::UserNotFound => write!(f, "User Not Found"),
-            Self::UserExists => write!(f, "User Exists"),
             Self::Other(error) => write!(f, "{}", error),
         }
     }
@@ -65,12 +67,13 @@ impl IntoResponse for UserError {
             Self::IoError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "IO Error").into_response(),
             Self::PasswordError => (StatusCode::BAD_REQUEST, "Password Error").into_response(),
             Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found").into_response(),
-            Self::UserExists => (StatusCode::CONFLICT, "User Exists").into_response(),
             Self::Other(error) => (StatusCode::INTERNAL_SERVER_ERROR, error).into_response(),
         }
     }
 }
 type Result<T> = std::result::Result<T, UserError>;
+
+/// A macro for handling errors in Tokio tasks.
 macro_rules! tokio_error {
     ($e:expr) => {
         match $e {
@@ -84,8 +87,7 @@ macro_rules! tokio_error {
         }
     };
 }
-/// A list of the usernames of all users that have logged in
-static LOGGED_IN_USERS: LazyLock<RwLock<Vec<String>>> = LazyLock::new(|| RwLock::new(Vec::new()));
+
 static ENSURE_DIR: Once = Once::new();
 /// A user on within system manager server (not necessarily a system user just a user in our database)
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -129,7 +131,7 @@ impl User {
     }
 
     #[inline]
-    pub fn name<'a>(&'a self) -> &'a str {
+    pub fn name(&self) -> &str {
         &self.name
     }
 
@@ -142,10 +144,6 @@ impl User {
         self.storage
     }
     #[inline]
-    pub fn name_mut<'a>(&'a mut self) -> &'a mut str {
-        &mut self.name
-    }
-    #[inline]
     pub fn admin_mut(&mut self) -> &mut bool {
         &mut self.admin
     }
@@ -154,6 +152,7 @@ impl User {
         &mut self.storage
     }
 
+    /// Logs in a user.
     pub async fn login(username: &str, password: &str) -> Result<Self> {
         let user_file = PathBuf::from(USERS_PATH).join(username).join("user.json");
         if fs::try_exists(&user_file).await.unwrap_or(false) {
@@ -166,27 +165,26 @@ impl User {
                     task::spawn_blocking(move || {
                         // Okay the sytnax here cloud be cleaner but I'm too lazy to clean it up so
                         // I'll just explain it
-                        match PASSWORD_HASHER.verify_password(
-                            password.as_bytes(),
-                            //we have to make sure it is borrowed here
-                            &(match PasswordHashString::from_str(&hashed_password) {
-                                // okay here we
-                                // load the password hash from the string
-                                Ok(value) => value, // then if it's okay we use the
-                                // password hash string
-                                Err(_) => return false,
-                            }
-                            .password_hash()), // then we convert the password hash string to a password hash (it's some weird typing thing)
-                        ) {
-                            Ok(_) => true,   // if the password is valid we return true
-                            Err(_) => false, // if the password is invalid we return false
-                        }
+                        PASSWORD_HASHER
+                            .verify_password(
+                                password.as_bytes(),
+                                //we have to make sure it is borrowed here
+                                &(match PasswordHashString::from_str(&hashed_password) {
+                                    // okay here we
+                                    // load the password hash from the string
+                                    Ok(value) => value, // then if it's okay we use the
+                                    // password hash string
+                                    Err(_) => return false,
+                                }
+                                .password_hash()), // then we convert the password hash string to a password hash (it's some weird typing thing)
+                            )
+                            .is_ok()
                     })
                     .await
                 )
             };
             if !vaild_password {
-                return Err(UserError::PasswordError);
+                Err(UserError::PasswordError)
             } else {
                 Ok(user)
             }
@@ -195,6 +193,7 @@ impl User {
         }
     }
 
+    /// Fetches a user from the database.
     pub async fn fetch_user(username: &str) -> Result<User> {
         let username = username.trim();
         let user_file = PathBuf::from(USERS_PATH).join(username).join("user.json");
@@ -207,6 +206,7 @@ impl User {
         }
     }
 
+    /// Saves the user to the database.
     pub async fn save(self) -> Result<()> {
         let username = self.name.trim();
         let user_dir = PathBuf::from(USERS_PATH).join(username);
@@ -217,12 +217,7 @@ impl User {
         Ok(())
     }
 
-    pub async fn delete(self) -> Result<()> {
-        let username = self.name.trim();
-        let user_dir = PathBuf::from(USERS_PATH).join(username);
-        fs::remove_dir_all(user_dir).await?;
-        Ok(())
-    }
+    /// Changes the user's password.
     pub async fn change_password(mut self, new_password: String) -> Result<String> {
         let hashed_password = {
             let new_password = new_password.clone();
@@ -248,6 +243,7 @@ impl User {
     }
 }
 
+/// Gets all users from the database.
 pub async fn get_users() -> Result<Vec<User>> {
     let user_dir = PathBuf::from(USERS_PATH);
     let mut read_dir = fs::read_dir(user_dir).await?;
