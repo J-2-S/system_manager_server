@@ -9,11 +9,11 @@ use std::{
 
 use argon2::{
     Argon2, PasswordVerifier,
-    password_hash::{self, PasswordHashString, PasswordHasher, SaltString, rand_core::OsRng},
+    password_hash::{PasswordHashString, PasswordHasher, SaltString, rand_core::OsRng},
 };
 use axum::{http::StatusCode, response::IntoResponse};
 use serde::{Deserialize, Serialize};
-use tokio::{fs, sync::RwLock, task};
+use tokio::{fs, task};
 
 /// The path to the users directory.
 #[cfg(not(debug_assertions))]

@@ -1,4 +1,3 @@
-use std::{collections::HashMap, sync::LazyLock};
 
 use askama::Template;
 use axum::{
@@ -11,7 +10,7 @@ use axum::{
 use serde::Deserialize;
 use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
-use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
+use tower_sessions::{MemoryStore, Session, SessionManagerLayer};
 
 use crate::{
     RESTART_PENDING,
